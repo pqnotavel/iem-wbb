@@ -7,6 +7,19 @@ import xlwt
 def makeDir(path):
    os.mkdir('./'+path)
 
+
+def salvaPaciente(dict_paciente, path):
+    lin, col = (0, 0)
+    workbook = xlwt.Workbook()
+    worksheet = workbook.add_sheet(u'Dados do Paciente')
+
+    for x in dict_paciente:
+        worksheet.write(lin, col,u''+str(x))
+        worksheet.write(lin, col +1, dict_paciente[x])
+        lin+=1
+
+    workbook.save(path + '/teste.xls')
+
 def importarXls(dict_paciente, APs, MLs, path):
 
     lin, col= (0,0)
@@ -34,7 +47,7 @@ def importarXls(dict_paciente, APs, MLs, path):
         worksheetnew.write(linha +1, 1, valor)
 
 
-
+    #-------salvar a data------
     workbook.save(path+'/teste.xls')
 
 def abrirXLS(path):

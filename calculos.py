@@ -141,3 +141,5 @@ def calcweight( readings, calibrations ):
 def calcIMC(weight, size):
     return (weight /(size**2))
 
+def calcMedia(weight):
+    return sum(weight)/len(weight)

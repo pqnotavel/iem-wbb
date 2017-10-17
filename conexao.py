@@ -133,7 +133,7 @@ def readWBB():
     #print(wiimote.__getattribute__())
     print(wiimote.request_status())
 
-    return balance_dif
+    return balance_dif, weight
 
 def closeConection():
     wiimote.close()

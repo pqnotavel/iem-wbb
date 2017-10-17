@@ -91,6 +91,7 @@ class Iem_wbb:
         py.show(self.canvas)
 
     def on_savepacient_button_clicked(self, widget):
+        global pacient
         name = self.name_entry.get_text()
         sex = self.sex_entry.get_text()
         age = self.age_entry.get_text()
@@ -106,7 +107,8 @@ class Iem_wbb:
     def on_button1_clicked(self, widget):
         global APs, MLs
 
-        balance = conect.readWBB()
+        balance, weight = conect.readWBB()
+        imc =  calc.calcIMC(weight, float(pacient['Altura']))
 
         for (x,y) in balance:
             APs.append(x)
@@ -181,6 +183,8 @@ class Iem_wbb:
         self.axis2.set_ylabel('AP')
         self.axis2.set_xlabel('ML')
         self.canvas2.draw()
+        self.weight.set_text(str(weight))
+        self.imc.set_text(str(imc))
 
     def __init__(self):
         self.gladeFile = "iem-wbb2.glade"
@@ -202,6 +206,8 @@ class Iem_wbb:
         self.age_entry = self.builder.get_object("age_entry")
         self.height_entry = self.builder.get_object("height_entry")
         self.sex_entry = self.builder.get_object("sex_entry")
+        self.weight = self.builder.get_object("weight")
+        self.imc = self.builder.get_object("imc")
 
         self.entry_Mdist = self.builder.get_object("mdist_")
         self.entry_Rdist_AP = self.builder.get_object("rdist_ap")
