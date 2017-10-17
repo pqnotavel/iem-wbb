@@ -1,6 +1,5 @@
 
 
-
 def distanciaMedia (lista_valores):
     soma = sum(list(lista_valores))
     dist_media = soma/len(lista_valores)
@@ -140,6 +139,3 @@ def calcweight( readings, calibrations ):
 
 def calcIMC(weight, size):
     return (weight /(size**2))
-
-def calcMedia(weight):
-    return sum(weight)/len(weight)

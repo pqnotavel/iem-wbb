@@ -105,10 +105,13 @@ class Iem_wbb:
         pacient = {'Nome': name, 'Sexo': sex, 'Idade': age, 'Altura': height}
 
     def on_button1_clicked(self, widget):
-        global APs, MLs
+        global APs, MLs, pacient
 
         balance, weight = conect.readWBB()
-        imc =  calc.calcIMC(weight, float(pacient['Altura']))
+        imc = calc.calcIMC(weight, float(pacient['Altura']))
+
+        pacient['Peso'] = weight
+        pacient['IMC'] = imc
 
         for (x,y) in balance:
             APs.append(x)
@@ -185,6 +188,8 @@ class Iem_wbb:
         self.canvas2.draw()
         self.weight.set_text(str(weight))
         self.imc.set_text(str(imc))
+
+        manArq.salvaPaciente(pacient, pacient['Nome'])
 
     def __init__(self):
         self.gladeFile = "iem-wbb2.glade"
