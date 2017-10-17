@@ -21,10 +21,10 @@ import pylab as py
 
 APs = []
 MLs = []
-paciente = {}
+pacient = {}
 
 class Iem_wbb:
-    global paciente
+    global pacient
 
     def on_window1_destroy(self, object, data=None):
         print("Quit with cancel")
@@ -33,6 +33,17 @@ class Iem_wbb:
     def on_gtk_quit_activate(self, menuitem, data=None):
         print("Quit from menu")
         Gtk.main_quit()
+
+    #Clear all* buffers to create a new consult
+    def on_new_activate(self, menuitem, data=None):
+        self.name_entry.set_text('')
+        self.sex_entry.set_text('')
+        self.age_entry.set_text('')
+        self.height_entry.set_text('')
+        self.name_entry.set_editable(True)
+        self.sex_entry.set_editable(True)
+        self.age_entry.set_editable(True)
+        self.height_entry.set_editable(True)
 
     #Show status
     def on_statusbar1_text_pushed(self, menuitem, data=None):
@@ -67,17 +78,30 @@ class Iem_wbb:
         if event.type == Gdk.EventType.BUTTON_PRESS and event.button == 3:
             self.popoverwindow1.popup()
 
-    def on_save_button_activate(self, widget):
-        print("Salvar")
-        plt.savefig('grafico original.jpg')
+    def on_savegraph_button_clicked(self, widget):
+        self.popoverwindow1.popdown()
+        print("Gráfico salvo")
+        plt.savefig('grafico original.png', dpi=500)
 
-    def on_advancedwindow_button_activate(self, widget):
+    def on_advancedwindow_button_clicked(self, widget):
+        self.popoverwindow1.popdown()
         print("Janela Avançada")
-        py.figure(1)
-        py.xlabel('MP')
-        py.ylabel('AP')
-        py.plot(MP, AP, "r-.")
-        py.show()
+        mng = plt.get_current_fig_manager()
+        mng.resize(*mng.window.maxsize())
+        py.show(self.canvas)
+
+    def on_savepacient_button_clicked(self, widget):
+        name = self.name_entry.get_text()
+        sex = self.sex_entry.get_text()
+        age = self.age_entry.get_text()
+        height = self.height_entry.get_text()
+        self.name_entry.set_editable(False)
+        self.sex_entry.set_editable(False)
+        self.age_entry.set_editable(False)
+        self.height_entry.set_editable(False)
+        manArq.makeDir(name)
+        print ("Paciente salvo")
+        pacient = {'Nome': name, 'Sexo': sex, 'Idade': age, 'Altura': height}
 
     def on_button1_clicked(self, widget):
         global APs, MLs
@@ -172,8 +196,12 @@ class Iem_wbb:
         self.statusbar = self.builder.get_object("statusbar1")
         self.context_id = self.statusbar.get_context_id("status")
         self.new_device_window = self.builder.get_object("new_device_window")
-        #self.popovermenu1 = self.builder.get_object("popovermenu1")
         self.popoverwindow1 = self.builder.get_object("popoverwindow1")
+
+        self.name_entry = self.builder.get_object("name_entry")
+        self.age_entry = self.builder.get_object("age_entry")
+        self.height_entry = self.builder.get_object("height_entry")
+        self.sex_entry = self.builder.get_object("sex_entry")
 
         self.entry_Mdist = self.builder.get_object("mdist_")
         self.entry_Rdist_AP = self.builder.get_object("rdist_ap")

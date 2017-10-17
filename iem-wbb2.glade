@@ -7,6 +7,7 @@
     <property name="can_focus">False</property>
     <property name="stock">gtk-connect</property>
   </object>
+  <object class="GtkEntryCompletion" id="entrycompletion1"/>
   <object class="GtkImage" id="new_device_image">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -167,12 +168,13 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkImageMenuItem">
+                      <object class="GtkImageMenuItem" id="new">
                         <property name="label">gtk-new</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_new_activate" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -185,12 +187,13 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem">
+                      <object class="GtkImageMenuItem" id="save">
                         <property name="label">gtk-save</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_savepacient_button_clicked" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -322,22 +325,23 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkButton">
+                      <object class="GtkButton" id="savepacient_button">
                         <property name="label" translatable="yes">Salvar</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <signal name="clicked" handler="on_savepacient_button_clicked" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
-                        <property name="top_attach">5</property>
+                        <property name="top_attach">6</property>
                       </packing>
                     </child>
                     <child>
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Nome</property>
+                        <property name="label" translatable="yes">Nome: </property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -348,18 +352,7 @@
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Idade</property>
-                      </object>
-                      <packing>
-                        <property name="left_attach">0</property>
-                        <property name="top_attach">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Altura</property>
+                        <property name="label" translatable="yes">Idade: </property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -370,7 +363,7 @@
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Peso</property>
+                        <property name="label" translatable="yes">Altura: </property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -381,7 +374,7 @@
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">IMC</property>
+                        <property name="label" translatable="yes">Peso: </property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -389,9 +382,21 @@
                       </packing>
                     </child>
                     <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">IMC: </property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">5</property>
+                      </packing>
+                    </child>
+                    <child>
                       <object class="GtkEntry" id="name_entry">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="input_purpose">name</property>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -402,20 +407,26 @@
                       <object class="GtkEntry" id="age_entry">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="max_length">3</property>
+                        <property name="max_width_chars">3</property>
+                        <property name="input_purpose">digits</property>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
-                        <property name="top_attach">1</property>
+                        <property name="top_attach">2</property>
                       </packing>
                     </child>
                     <child>
                       <object class="GtkEntry" id="height_entry">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="max_length">4</property>
+                        <property name="max_width_chars">4</property>
+                        <property name="input_purpose">number</property>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
-                        <property name="top_attach">2</property>
+                        <property name="top_attach">3</property>
                       </packing>
                     </child>
                     <child>
@@ -426,7 +437,7 @@
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
-                        <property name="top_attach">3</property>
+                        <property name="top_attach">4</property>
                       </packing>
                     </child>
                     <child>
@@ -438,7 +449,29 @@
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
-                        <property name="top_attach">4</property>
+                        <property name="top_attach">5</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Sexo: </property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="sex_entry">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="input_purpose">alpha</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">1</property>
                       </packing>
                     </child>
                     <child>
@@ -897,10 +930,12 @@
         <property name="can_focus">False</property>
         <property name="orientation">vertical</property>
         <child>
-          <object class="GtkLabel" id="save_graph_label">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
+          <object class="GtkButton" id="savegraph_button">
             <property name="label" translatable="yes">Salvar</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <signal name="clicked" handler="on_savegraph_button_clicked" swapped="no"/>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -920,15 +955,16 @@
           </packing>
         </child>
         <child>
-          <object class="GtkLabel" id="advanced_window_label">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
+          <object class="GtkButton" id="advancedwindow_button">
             <property name="label" translatable="yes">Janela avançada</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <signal name="clicked" handler="on_advancedwindow_button_clicked" swapped="no"/>
           </object>
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="pack_type">end</property>
             <property name="position">2</property>
           </packing>
         </child>
