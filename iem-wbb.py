@@ -45,10 +45,6 @@ class Iem_wbb:
         self.age_entry.set_editable(True)
         self.height_entry.set_editable(True)
 
-    #Show status
-    def on_statusbar1_text_pushed(self, menuitem, data=None):
-        self.statusbar.push(self.context_id, "Não conectado")
-
     #Nothing to do (not implemented yet)
     def on_search_device_activate(self, menuitem, data=None):
         print
@@ -56,23 +52,36 @@ class Iem_wbb:
     def on_connect_to_saved_device_activate(self, menuitem, data=None):
         print
 
-    #Show new_device_window
+    #Show newdevicewindow1
     def on_new_device_activate(self, menuitem, data=None):
         print("Adicionando novo dispositivo")
-        self.new_device_window.show()
+        self.newdevicewindow1.show()
 
-    #Hide new_device_window
+    def on_search_device_activate(self, menuitem, data=None):
+        print("Buscando novo dispositivo")
+        self.searchdevicewindow1.show()
+        self.spinner_in_search.start()
+
+    def close_searchdevicewindow1(self, arg1, arg2):
+        self.searchdevicewindow1.hide()
+        return True
+
+    def close_newdevicewindow1(self, arg1, arg2):
+        self.newdevicewindow1.hide()
+        return True
+
+    #Hide newdevicewindow1
     def on_add_button_clicked(self, menuitem, data=None):
         print("Dispositivo adicionado")
-        self.new_device_window.hide()
+        self.newdevicewindow1.hide()
 
     def on_cancel_button_clicked(self, menuitem, data=None):
         print("Adição de dispositivo cancelada")
-        self.new_device_window.hide()
+        self.newdevicewindow1.hide()
 
     def on_device_mac_activate(self, menuitem, data=None):
         print("Dispositivo adicionado")
-        self.new_device_window.hide()
+        self.newdevicewindow1.hide()
 
     def on_scrolledwindow1_button_press_event(self, widget, event):
         if event.type == Gdk.EventType.BUTTON_PRESS and event.button == 3:
@@ -80,35 +89,81 @@ class Iem_wbb:
 
     def on_savegraph_button_clicked(self, widget):
         self.popoverwindow1.popdown()
+        self.fig.canvas.print_png(pacient['Nome'] + '/grafico original')
         print("Gráfico salvo")
-        plt.savefig('grafico original.png', dpi=500)
 
     def on_advancedwindow_button_clicked(self, widget):
         self.popoverwindow1.popdown()
         print("Janela Avançada")
-        mng = plt.get_current_fig_manager()
-        mng.resize(*mng.window.maxsize())
-        py.show(self.canvas)
+        #mng = plt.get_current_fig_manager()
+        #mng.resize(*mng.window.maxsize())
+        py.show(self.fig.canvas)
+
+    def on_save_device_in_search_clicked(self, widget):
+        self.spinner_in_search.stop()
+        self.searchdevicewindow1.hide()
+
+    def on_cancel_in_search_clicked(self, widget):
+        self.spinner_in_search.stop()
+        self.searchdevicewindow1.hide()
+
+    def on_cancel_in_standup_clicked(self, widget):
+        self.standupwindow1.hide()
+    #image_set_from_icon_set(user-available)
+
+    def on_messagedialog1_close_clicked(self, widget):
+        self.messagedialog1.hide()
 
     def on_savepacient_button_clicked(self, widget):
         global pacient
-        name = self.name_entry.get_text()
-        sex = self.sex_entry.get_text()
-        age = self.age_entry.get_text()
-        height = self.height_entry.get_text()
-        self.name_entry.set_editable(False)
-        self.sex_entry.set_editable(False)
-        self.age_entry.set_editable(False)
-        self.height_entry.set_editable(False)
-        manArq.makeDir(name)
-        print ("Paciente salvo")
-        pacient = {'Nome': name, 'Sexo': sex, 'Idade': age, 'Altura': height}
 
-    def on_button1_clicked(self, widget):
+        if (self.name_entry.get_text() == ""):
+            self.messagedialog1.format_secondary_text("Nome inválido, tente novamente.")
+            self.messagedialog1.show()
+        elif(self.sex_entry.get_text() == ""):
+            self.messagedialog1.format_secondary_text("Sexo inválido, tente novamente.")
+            self.messagedialog1.show()
+        elif(self.age_entry.get_text() == ""):
+            self.messagedialog1.format_secondary_text("Idade inválida, tente novamente.")
+            self.messagedialog1.show()
+        elif(self.height_entry.get_text() == ""):
+            self.messagedialog1.format_secondary_text("Altura inválida, tente novamente.")
+            self.messagedialog1.show()
+        else:
+            name = self.name_entry.get_text()
+            sex = self.sex_entry.get_text()
+            age = self.age_entry.get_text()
+            height = self.height_entry.get_text()
+            self.name_entry.set_editable(False)
+            self.sex_entry.set_editable(False)
+            self.age_entry.set_editable(False)
+            self.height_entry.set_editable(False)
+            self.name_entry.set_sensitive(False)
+            self.sex_entry.set_sensitive(False)
+            self.age_entry.set_sensitive(False)
+            self.height_entry.set_sensitive(False)
+
+            manArq.makeDir(name)
+
+            print ("Paciente salvo")
+
+            pacient = {'Nome': name, 'Sexo': sex, 'Idade': age, 'Altura': height}
+            self.savepacient_button.set_sensitive(False)
+            self.capture_button.set_sensitive(True)
+
+    def on_capture_button_clicked(self, widget):
+        self.standupwindow1.show()
+
+    def on_start_capture_button_clicked(self, widget):
+        self.standupwindow1.hide()
+
         global APs, MLs, pacient
 
-        balance, weight = conect.readWBB()
+        balance, weight, pontos = conect.readWBB(self)
+        # = calcPesoMedio(weights)
         imc = calc.calcIMC(weight, float(pacient['Altura']))
+
+        self.points_entry.set_text(str(pontos))
 
         pacient['Peso'] = weight
         pacient['IMC'] = imc
@@ -133,7 +188,9 @@ class Iem_wbb:
         self.axis.set_ylim(-max_absoluto_AP, max_absoluto_AP)
         self.axis.plot(MLs, APs,'-',color='r')
         self.canvas.draw()
-
+        #plt.savefig(pacient['Nome'] + '/grafico original.png', dpi=500)
+        self.fig.canvas.print_png(pacient['Nome'] + '/grafico original')
+        manArq.importarXls(pacient, APs, MLs, pacient['Nome'])
     #def on_button2_clicked(self, widget):
         #global APs, MLs
         APs, MLs = calc.geraAP_ML(APs, MLs)
@@ -187,9 +244,11 @@ class Iem_wbb:
         self.axis2.set_xlabel('ML')
         self.canvas2.draw()
         self.weight.set_text(str(weight))
+        self.weight.set_max_length(6)
         self.imc.set_text(str(imc))
-
-        manArq.salvaPaciente(pacient, pacient['Nome'])
+        self.imc.set_max_length(5)
+        #plt.savefig(pacient['Nome'] + '/grafico processado.png', dpi=500)
+        self.fig2.canvas.print_png(pacient['Nome'] + '/grafico processado')
 
     def __init__(self):
         self.gladeFile = "iem-wbb2.glade"
@@ -198,21 +257,37 @@ class Iem_wbb:
 
         self.builder.connect_signals(self)
 
+        #Windows
         self.window = self.builder.get_object("window1")
         self.scrolledwindow1 = self.builder.get_object("scrolledwindow1")
         self.scrolledwindow2 = self.builder.get_object("scrolledwindow2")
         self.scrolledwindow3 = self.builder.get_object("scrolledwindow3")
-        self.statusbar = self.builder.get_object("statusbar1")
-        self.context_id = self.statusbar.get_context_id("status")
-        self.new_device_window = self.builder.get_object("new_device_window")
+        self.newdevicewindow1 = self.builder.get_object("newdevicewindow1")
         self.popoverwindow1 = self.builder.get_object("popoverwindow1")
+        self.messagedialog1 = self.builder.get_object("messagedialog1")
+        self.standupwindow1 = self.builder.get_object("standupwindow1")
+        self.searchdevicewindow1 = self.builder.get_object("searchdevicewindow1")
+        self.searchdevicewindow1.connect("delete-event", self.close_searchdevicewindow1)
+        self.newdevicewindow1.connect("delete-event", self.close_newdevicewindow1)
 
+        #Buttons
+        self.capture_button = self.builder.get_object("capture_button")
+        self.savepacient_button = self.builder.get_object("savepacient_button")
+        self.start_capture_button = self.builder.get_object("start_capture_button")
+        self.save_device_in_search = self.builder.get_object("save_device_in_search")
+
+        #Spinners
+        self.spinner_in_search = self.builder.get_object("spinner_in_search")
+
+        #Entrys
         self.name_entry = self.builder.get_object("name_entry")
         self.age_entry = self.builder.get_object("age_entry")
         self.height_entry = self.builder.get_object("height_entry")
         self.sex_entry = self.builder.get_object("sex_entry")
         self.weight = self.builder.get_object("weight")
         self.imc = self.builder.get_object("imc")
+        self.device_name_in_search = self.builder.get_object("device_name_in_search")
+        self.device_mac_in_search = self.builder.get_object("device_mac_in_search")
 
         self.entry_Mdist = self.builder.get_object("mdist_")
         self.entry_Rdist_AP = self.builder.get_object("rdist_ap")
@@ -224,7 +299,9 @@ class Iem_wbb:
         self.entry_MVELO_AP = self.builder.get_object("mvelo_ap")
         self.entry_MVELO_ML = self.builder.get_object("mvelo_ml")
         self.entry_MVELO_TOTAL = self.builder.get_object("mvelo_t")
+        self.points_entry = self.builder.get_object("points_entry")
 
+        #Plots
         '''Original Graph'''
         self.fig = plt.figure()
 

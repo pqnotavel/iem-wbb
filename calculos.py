@@ -1,5 +1,3 @@
-
-
 def distanciaMedia (lista_valores):
     soma = sum(list(lista_valores))
     dist_media = soma/len(lista_valores)
@@ -110,7 +108,7 @@ def delEleML(ML, pos):
 def gsc(readings, pos, named_calibration):
 	reading = readings[pos]
 	calibration = named_calibration[pos]
-	
+
 	if reading < calibration[1]:
 		return 1700 * (reading - calibration[0]) / (calibration[1] - calibration[0])
 	else:
@@ -126,8 +124,8 @@ def calcweight( readings, calibrations ):
 		calibration = calibrations[sensor]
 		#if reading < calibration[0]:
 		#	print "Warning, %s reading below lower calibration value" % sensor
-		if reading > calibration[2]:
-			print ("Warning, %s reading above upper calibration value" % sensor)
+		#if reading > calibration[2]:
+		#	print ("Warning, %s reading above upper calibration value" % sensor)
 		# 1700 appears to be the step the calibrations are against.
 		# 17kg per sensor is 68kg, 1/2 of the advertised Japanese weight limit.
 		if reading < calibration[1]:
@@ -139,3 +137,6 @@ def calcweight( readings, calibrations ):
 
 def calcIMC(weight, size):
     return (weight /(size**2))
+
+def calcPesoMedio(weights):
+    return sum(weights)/len(weights)

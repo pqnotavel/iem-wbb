@@ -33,7 +33,8 @@ import calculos as calc
 
 '''
 
-def readWBB():
+def readWBB(self):
+
     print("Please press the red 'connect' button on the balance board, inside the battery compartment.")
     print("Do not step on the balance board.")
 
@@ -81,6 +82,8 @@ def readWBB():
     i = 0
     amostra = 768
     t1 = ptime.time() + dt
+    #weights = []
+
     while (i < amostra):
         wiimote.request_status()
         readings = wiimote.state['balance']
@@ -109,6 +112,7 @@ def readWBB():
         i += 1
         if (i == amostra-1):
             weight = calc.calcweight(readings, named_calibration)
+        #weights.append(weight)
 
         if (x_ref != x_balance or y_ref != y_balance):
             balance_dif.append((x_balance, y_balance))
@@ -132,8 +136,7 @@ def readWBB():
     #wiimote.close()
     #print(wiimote.__getattribute__())
     print(wiimote.request_status())
-
-    return balance_dif, weight
+    return balance_dif, weight, i
 
 def closeConection():
     wiimote.close()
