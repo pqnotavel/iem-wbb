@@ -1,14 +1,50 @@
+# -*- coding: utf-8 -*-
+
 import csv
 import os
 import xlrd
 import xlwt
+from xlutils.copy import copy
 from datetime import datetime
 
 #cria diretorio, com o nome dos pacientes, onde será guardados seus respectivos arquivos
 def makeDir(path):
    os.mkdir('./'+path)
 
-def carregaPaciente(name):
+def salvaWBB(dict_WBB):
+    #Lendo arquivo
+    workbook_read = xlrd.open_workbook('Devices.xls', formatting_info = True)
+    worksheet_read = workbook_read.sheet_by_index(0)
+    lin = worksheet_read.nrows
+
+    #Copiando arquivo
+    workbook_write = copy(workbook_read)
+    worksheet_write = workbook_write.get_sheet(0)
+
+    #Escrevendo dados no arquivo
+    worksheet_write.write(lin, 0, dict_WBB['Nome'])
+    worksheet_write.write(lin, 1, dict_WBB['MAC'])
+
+    #Salvando Arquivo editado
+    workbook_write.save('Devices.xls')
+
+def abreWBBs():
+    names = []
+    macs = []
+    workbook = xlrd.open_workbook('Devices.xls')
+    worksheet = workbook.sheet_by_index(0)
+
+    for row in range(1, worksheet.nrows):
+        names.append(str(worksheet.cell(row,0).value))
+        macs.append(str(worksheet.cell(row,1).value))
+
+    return names, macs
+
+def carregaPaciente(self, dict_paciente, path):
+    lin, col = (0 ,0)
+    workbook = xlrd.open_workbook(path)
+    worksheet = workbook.sheet_by_index(1)
+    workbook.save(path+'/'+dict_paciente['Nome']+'.xls')
     return
 
 def salvaPaciente(dict_paciente, path):

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import cwiid
 import os
 import time as ptime
@@ -20,7 +22,7 @@ import calculos as calc
         print("Please press the red 'connect' button on the balance board, inside the battery compartment.")
         print("Do not step on the balance board.")
         wiimote.close()
-        wiimote = cwiid.Wiimote("00:27:09:AC:29:22")
+            wiimote = cwiid.Wiimote("00:27:09:AC:29:22")
         wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
         wiimote.request_status()
 
@@ -32,6 +34,36 @@ import calculos as calc
                          }
 
 '''
+
+def searchWBB(self):
+    ptime.sleep(3)
+
+    wiimote = cwiid.Wiimote()
+    wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
+    wiimote.request_status()
+
+    i=1;
+    while (wiimote.state['ext_type'] != cwiid.EXT_BALANCE):
+        try:
+            wiimote = cwiid.Wiimote()
+            wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
+            wiimote.request_status()
+        except RuntimeError:
+            if (i>10):
+                quit()
+                break
+            print ("Error opening wiimote connection")
+            print ("attempt " + str(i))
+            i +=1
+
+    #while(wiimote.state['ext_type'] != cwiid.EXT_BALANCE and i<10):
+    #    wiimote.close()
+    #    wiimote = cwiid.Wiimote()
+    #    wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
+    #    wiimote.request_status()
+    #    i+=1
+
+    return wiimote
 
 def readWBB(self):
 

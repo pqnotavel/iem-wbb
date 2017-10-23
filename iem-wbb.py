@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# -*- coding: utf-8 -*-
 
 import sys
 import cwiid
@@ -22,6 +23,11 @@ import pylab as py
 APs = []
 MLs = []
 pacient = {}
+WBB = {}
+dev_names = []
+dev_macs = []
+
+global wiimote
 
 class Iem_wbb:
     global pacient
@@ -46,21 +52,36 @@ class Iem_wbb:
         self.height_entry.set_editable(True)
 
     #Nothing to do (not implemented yet)
-    def on_search_device_activate(self, menuitem, data=None):
-        print
-
     def on_connect_to_saved_device_activate(self, menuitem, data=None):
-        print
+        global dev_names, dev_macs
+        self.saveddeviceswindow1.show()
+
 
     #Show newdevicewindow1
     def on_new_device_activate(self, menuitem, data=None):
         print("Adicionando novo dispositivo")
         self.newdevicewindow1.show()
 
+
     def on_search_device_activate(self, menuitem, data=None):
-        print("Buscando novo dispositivo")
+        global wiimote
         self.searchdevicewindow1.show()
         self.spinner_in_search.start()
+
+        print("Buscando novo dispositivo")
+
+        wiimote = conect.searchWBB(self)
+
+        self.image_statusbar1.set_from_file("green.png")
+        self.label_statusbar1.set_text("Conectado")
+        self.spinner_in_search.stop()
+        self.save_device_in_search.set_sensitive(True)
+        self.device_name_in_search.set_sensitive(True)
+        self.capture_button.set_sensitive(True)
+
+    def close_standupwindow1(self, arg1, arg2):
+        self.standupwindow1.hide()
+        return True
 
     def close_searchdevicewindow1(self, arg1, arg2):
         self.searchdevicewindow1.hide()
@@ -70,10 +91,27 @@ class Iem_wbb:
         self.newdevicewindow1.hide()
         return True
 
+    def close_saveddeviceswindow1(self, arg1, arg2):
+        self.saveddeviceswindow1.hide()
+        return True
+
     #Hide newdevicewindow1
     def on_add_button_clicked(self, menuitem, data=None):
-        print("Dispositivo adicionado")
-        self.newdevicewindow1.hide()
+        name = self.device_name_in_new.get_text()
+        mac = self.device_mac_in_new.get_text()
+        if (name == ""):
+            self.messagedialog1.format_secondary_text("Nome inválido, tente novamente.")
+            self.messagedialog1.show()
+        elif((mac == "") or (len(mac)!=17)):
+            self.messagedialog1.format_secondary_text("MAC inválido, tente novamente.")
+            self.messagedialog1.show()
+        else:
+            self.device_name_in_new.set_text("")
+            self.device_mac_in_new.set_text("")
+            WBB = {'Nome':name, 'MAC':mac}
+            manArq.salvaWBB(WBB)
+            print("Dispositivo adicionado")
+            self.newdevicewindow1.hide()
 
     def on_cancel_button_clicked(self, menuitem, data=None):
         print("Adição de dispositivo cancelada")
@@ -109,7 +147,6 @@ class Iem_wbb:
 
     def on_cancel_in_standup_clicked(self, widget):
         self.standupwindow1.hide()
-    #image_set_from_icon_set(user-available)
 
     def on_messagedialog1_close_clicked(self, widget):
         self.messagedialog1.hide()
@@ -149,7 +186,6 @@ class Iem_wbb:
 
             pacient = {'Nome': name, 'Sexo': sex, 'Idade': age, 'Altura': height}
             self.savepacient_button.set_sensitive(False)
-            self.capture_button.set_sensitive(True)
 
     def on_capture_button_clicked(self, widget):
         self.standupwindow1.show()
@@ -157,9 +193,9 @@ class Iem_wbb:
     def on_start_capture_button_clicked(self, widget):
         self.standupwindow1.hide()
 
-        global APs, MLs, pacient
+        global APs, MLs, pacient, wiimote
 
-        balance, weight, pontos = conect.readWBB(self)
+        balance, weight, pontos = calc.calcPontos(self, wiimote)
         # = calcPesoMedio(weights)
         imc = calc.calcIMC(weight, float(pacient['Altura']))
 
@@ -251,7 +287,7 @@ class Iem_wbb:
         self.fig2.canvas.print_png(pacient['Nome'] + '/grafico processado')
 
     def __init__(self):
-        self.gladeFile = "iem-wbb2.glade"
+        self.gladeFile = "iem-wbb.glade"
         self.builder = Gtk.Builder()
         self.builder.add_from_file(self.gladeFile)
 
@@ -267,8 +303,19 @@ class Iem_wbb:
         self.messagedialog1 = self.builder.get_object("messagedialog1")
         self.standupwindow1 = self.builder.get_object("standupwindow1")
         self.searchdevicewindow1 = self.builder.get_object("searchdevicewindow1")
+        self.saveddeviceswindow1 = self.builder.get_object("saveddeviceswindow1")
+
+        #Delete-events
         self.searchdevicewindow1.connect("delete-event", self.close_searchdevicewindow1)
         self.newdevicewindow1.connect("delete-event", self.close_newdevicewindow1)
+        self.standupwindow1.connect("delete-event", self.close_standupwindow1)
+        self.saveddeviceswindow1.connect("delete-event", self.close_saveddeviceswindow1)
+
+        #Images
+        self.image_statusbar1 = self.builder.get_object("image_statusbar1")
+
+        #Grids
+        self.grid_graphs = self.builder.get_object("grid_graphs")
 
         #Buttons
         self.capture_button = self.builder.get_object("capture_button")
@@ -279,6 +326,9 @@ class Iem_wbb:
         #Spinners
         self.spinner_in_search = self.builder.get_object("spinner_in_search")
 
+        #Labels
+        self.label_statusbar1 = self.builder.get_object("label_statusbar1")
+
         #Entrys
         self.name_entry = self.builder.get_object("name_entry")
         self.age_entry = self.builder.get_object("age_entry")
@@ -288,6 +338,8 @@ class Iem_wbb:
         self.imc = self.builder.get_object("imc")
         self.device_name_in_search = self.builder.get_object("device_name_in_search")
         self.device_mac_in_search = self.builder.get_object("device_mac_in_search")
+        self.device_name_in_new = self.builder.get_object("device_name_in_new")
+        self.device_mac_in_new = self.builder.get_object("device_mac_in_new")
 
         self.entry_Mdist = self.builder.get_object("mdist_")
         self.entry_Rdist_AP = self.builder.get_object("rdist_ap")
@@ -300,6 +352,12 @@ class Iem_wbb:
         self.entry_MVELO_ML = self.builder.get_object("mvelo_ml")
         self.entry_MVELO_TOTAL = self.builder.get_object("mvelo_t")
         self.points_entry = self.builder.get_object("points_entry")
+
+        #Combo-boxes
+        self.combo_box_text_in_saved = self.builder.get_object("combo_box_text_in_saved")
+        dev_names, dev_macs = manArq.abreWBBs()
+        for i in range(len(dev_names)):
+            self.combo_box_text_in_saved.insert(i-1, None, dev_names[i])
 
         #Plots
         '''Original Graph'''
@@ -330,6 +388,8 @@ class Iem_wbb:
         self.scrolledwindow3.add_with_viewport(self.canvas3)
 
         self.window.show_all()
+        #ptime.sleep(5)
+        self.grid_graphs.set_sensitive(True)
 
 if __name__ == "__main__":
     main = Iem_wbb()
