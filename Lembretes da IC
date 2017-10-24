@@ -1,0 +1,46 @@
+Fazer o resumo no sharelatex dos artigos lidos, sobre as métricas usadas para o processamento, até dia 9 de julho.
+está faltando colocar as formulas no resumo. FEITO NO GDIVE
+
+
+No <código></código>
+
+1 - Ajustar os eixos, para o gráfico processado.(-x, x, -y ,y) FEITO
+	
+2 - ajustar o tipo de gráfico. FEITO
+
+3 - fazer a mudança para a interface feita no glade.
+
+4 - o gráfico tem que ser ajustável, e os botões não podem crescer quando maximizar a janela. RESOLVIDO DE OUTRA FORMA OU NÃO.
+
+5 - fazer o calculo de quanto segundos, em média, a plataforma se comunicas com o pc. (30000 valores) 
+				for(i=1, i<N, i++)
+					if (x_[i] != x[i] || y_[i] =! y[i-1])
+						q++
+						x_[q]= x[i]
+						y_[q]= y[i]
+						
+	usar os valores de xbalance e ybalance
+
+6 - fazer a integração entre o app e o modullo do wbb -FEITO
+
+7 - remodelar a interface - feito
+
+8 - arquivo de inicialização para selecionar a WBB que quer conectar - falta terminar
+
+9 - arquivos de saida
+	cada paciente deve ter seus dados salvos, tanto suas informações como as informações do exame(cada vez que ele fizer um novo exame)- ainda nao terminei
+
+10 - encontrar uma forma para exportar esses dados para uma planilha e exportar os graficos para imagens. - feito
+
+11 - inserir peso, altura e IMC na interface. - feito
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+12 - Janela de busca e conexão de dispositivos
+
+13 - na interface, seletor de exames já feito, botão de modificar, botao de capturar desabilitado, inserir numeros de pontos, inserir o status na barra de status
+
+14 - verificar se paciente existe, fazer a verificação para salvar o novo arquivo(não sobrescrever os já salvos) 
+------------------------------------------------------------------------------------------------------------------------------
+
+
