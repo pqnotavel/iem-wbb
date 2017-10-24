@@ -5,36 +5,6 @@ import os
 import time as ptime
 import calculos as calc
 
-'''def openConection(MAC):
-    print("Please press the red 'connect' button on the balance board, inside the battery compartment.")
-    print("Do not step on the balance board.")
-
-    global wiimote
-
-    wiimote = cwiid.Wiimote(MAC)
-
-    wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
-    wiimote.request_status()
-
-    while (wiimote.state['ext_type'] != cwiid.EXT_BALANCE):
-        # if wiimote.state['ext_type'] != cwiid.EXT_BALANCE:
-        print('This program only supports the Wii Balance Board')
-        print("Please press the red 'connect' button on the balance board, inside the battery compartment.")
-        print("Do not step on the balance board.")
-        wiimote.close()
-            wiimote = cwiid.Wiimote("00:27:09:AC:29:22")
-        wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
-        wiimote.request_status()
-
-    balance_calibration = wiimote.get_balance_cal()
-    named_calibration = {'right_top': balance_calibration[0],
-                         'right_bottom': balance_calibration[1],
-                         'left_top': balance_calibration[2],
-                         'left_bottom': balance_calibration[3],
-                         }
-
-'''
-
 def searchWBB(self):
 
     wiimote = cwiid.Wiimote()
