@@ -53,15 +53,24 @@ class Iem_wbb:
 
     #Nothing to do (not implemented yet)
     def on_connect_to_saved_device_activate(self, menuitem, data=None):
-        global dev_names, dev_macs
         self.saveddeviceswindow1.show()
 
+
+    def combo_box_in_saved_changed(self, widget):
+        global dev_macs
+
+        tree_iter = self.combo_box_in_saved.get_active_iter()
+        if(tree_iter != None):
+            model = self.combo_box_in_saved.get_model()
+            index = model.get_path(tree_iter)[0]
+            self.mac_entry_in_saved.set_text(dev_macs[index])
+            self.connect_in_saved.set_sensitive(True)
+        return True
 
     #Show newdevicewindow1
     def on_new_device_activate(self, menuitem, data=None):
         print("Adicionando novo dispositivo")
         self.newdevicewindow1.show()
-
 
     def on_search_device_activate(self, menuitem, data=None):
         global wiimote
@@ -78,6 +87,12 @@ class Iem_wbb:
         self.save_device_in_search.set_sensitive(True)
         self.device_name_in_search.set_sensitive(True)
         self.capture_button.set_sensitive(True)
+
+    def on_disconnect_activate(self, menuitem, data=None):
+        global wiimote
+        wiimote.conect.closeConection()
+        self.image_statusbar1.set_from_file("red.png")
+        self.label_statusbar1.set_text("Não conectado")
 
     def close_standupwindow1(self, arg1, arg2):
         self.standupwindow1.hide()
@@ -96,7 +111,9 @@ class Iem_wbb:
         return True
 
     #Hide newdevicewindow1
-    def on_add_button_clicked(self, menuitem, data=None):
+    def on_add_button_clicked(self, widget):
+        global dev_macs, dev_names
+
         name = self.device_name_in_new.get_text()
         mac = self.device_mac_in_new.get_text()
         if (name == ""):
@@ -106,18 +123,29 @@ class Iem_wbb:
             self.messagedialog1.format_secondary_text("MAC inválido, tente novamente.")
             self.messagedialog1.show()
         else:
-            self.device_name_in_new.set_text("")
-            self.device_mac_in_new.set_text("")
             WBB = {'Nome':name, 'MAC':mac}
             manArq.salvaWBB(WBB)
+
             print("Dispositivo adicionado")
+
+            self.device_name_in_new.set_text("")
+            self.device_mac_in_new.set_text("")
             self.newdevicewindow1.hide()
 
-    def on_cancel_button_clicked(self, menuitem, data=None):
+            self.liststore_devices.clear()
+            dev_names, dev_macs = manArq.abreWBBs()
+            for i in range(len(dev_names)):
+                 self.liststore_devices.append([dev_names[i]])
+
+    def on_cancel_in_saved_clicked(self, widget):
+        print("Seleção de dispositivo cancelada")
+        self.saveddeviceswindow1.hide()
+
+    def on_cancel_button_clicked(self, widget):
         print("Adição de dispositivo cancelada")
         self.newdevicewindow1.hide()
 
-    def on_device_mac_activate(self, menuitem, data=None):
+    def on_device_mac_activate(self, widget):
         print("Dispositivo adicionado")
         self.newdevicewindow1.hide()
 
@@ -144,6 +172,17 @@ class Iem_wbb:
     def on_cancel_in_search_clicked(self, widget):
         self.spinner_in_search.stop()
         self.searchdevicewindow1.hide()
+
+    def on_connect_in_saved_clicked(self, widget):
+        global wiimote
+
+        MAC = self.mac_entry_in_saved.get_text()
+        print (MAC)
+
+        #wiimote = conect.connectToWBB(MAC)
+
+        self.saveddeviceswindow1.hide()
+        return
 
     def on_cancel_in_standup_clicked(self, widget):
         self.standupwindow1.hide()
@@ -193,7 +232,7 @@ class Iem_wbb:
     def on_start_capture_button_clicked(self, widget):
         self.standupwindow1.hide()
 
-        global APs, MLs, pacient, wiimote
+        global APs, MLs, pacient, wiimote, dev_macs, dev_names
 
         balance, weight, pontos = calc.calcPontos(self, wiimote)
         # = calcPesoMedio(weights)
@@ -227,8 +266,6 @@ class Iem_wbb:
         #plt.savefig(pacient['Nome'] + '/grafico original.png', dpi=500)
         self.fig.canvas.print_png(pacient['Nome'] + '/grafico original')
         manArq.importarXls(pacient, APs, MLs, pacient['Nome'])
-    #def on_button2_clicked(self, widget):
-        #global APs, MLs
         APs, MLs = calc.geraAP_ML(APs, MLs)
 
         dis_resultante_total = calc.distanciaResultante(APs, MLs)
@@ -287,6 +324,8 @@ class Iem_wbb:
         self.fig2.canvas.print_png(pacient['Nome'] + '/grafico processado')
 
     def __init__(self):
+        global dev_names, dev_macs
+
         self.gladeFile = "iem-wbb.glade"
         self.builder = Gtk.Builder()
         self.builder.add_from_file(self.gladeFile)
@@ -322,6 +361,7 @@ class Iem_wbb:
         self.savepacient_button = self.builder.get_object("savepacient_button")
         self.start_capture_button = self.builder.get_object("start_capture_button")
         self.save_device_in_search = self.builder.get_object("save_device_in_search")
+        self.connect_in_saved = self.builder.get_object("connect_in_saved")
 
         #Spinners
         self.spinner_in_search = self.builder.get_object("spinner_in_search")
@@ -340,6 +380,7 @@ class Iem_wbb:
         self.device_mac_in_search = self.builder.get_object("device_mac_in_search")
         self.device_name_in_new = self.builder.get_object("device_name_in_new")
         self.device_mac_in_new = self.builder.get_object("device_mac_in_new")
+        self.mac_entry_in_saved = self.builder.get_object("mac_entry_in_saved")
 
         self.entry_Mdist = self.builder.get_object("mdist_")
         self.entry_Rdist_AP = self.builder.get_object("rdist_ap")
@@ -354,10 +395,17 @@ class Iem_wbb:
         self.points_entry = self.builder.get_object("points_entry")
 
         #Combo-boxes
-        self.combo_box_text_in_saved = self.builder.get_object("combo_box_text_in_saved")
+        self.combo_box_in_saved = self.builder.get_object("combo_box_in_saved")
+
+        #Liststores
+        self.liststore_devices = self.builder.get_object("liststore_devices")
+        self.liststore_devices.clear()
         dev_names, dev_macs = manArq.abreWBBs()
         for i in range(len(dev_names)):
-            self.combo_box_text_in_saved.insert(i-1, None, dev_names[i])
+             self.liststore_devices.append([dev_names[i]])
+
+        #Change Events
+        self.combo_box_in_saved.connect("changed", self.combo_box_in_saved_changed)
 
         #Plots
         '''Original Graph'''
@@ -388,7 +436,6 @@ class Iem_wbb:
         self.scrolledwindow3.add_with_viewport(self.canvas3)
 
         self.window.show_all()
-        #ptime.sleep(5)
         self.grid_graphs.set_sensitive(True)
 
 if __name__ == "__main__":
