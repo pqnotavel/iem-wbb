@@ -9,7 +9,10 @@ from datetime import datetime
 
 #cria diretorio, com o nome dos pacientes, onde será guardados seus respectivos arquivos
 def makeDir(path):
-   os.mkdir('./'+path)
+    if os.path.isdir(path):
+        return False
+    os.mkdir('./'+path)
+    return True
 
 def saveWBB(dict_WBB):
     #Lendo arquivo

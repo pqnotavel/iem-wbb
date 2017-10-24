@@ -168,9 +168,9 @@ def calcPontos(self, wiimote):
     duration = 1  # second
     freq = 440  # Hz
     os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % (duration, freq))
-    print("Preperados!!!!!")
-    ptime.sleep(10)
-    print("Já!!!!!!!!!!")
+    #print("Preperados!!!!!")
+    #ptime.sleep(10)
+    #print("Já!!!!!!!!!!")
     os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % (duration, freq))
     start = ptime.time()
     # dt = 0.03125
@@ -179,7 +179,7 @@ def calcPontos(self, wiimote):
     i = 0
     amostra = 768
     t1 = ptime.time() + dt
-    #weights = []
+    weights = []
 
     while (i < amostra):
         wiimote.request_status()
@@ -207,9 +207,12 @@ def calcPontos(self, wiimote):
 
         # balance_lst.append((x_balance,y_balance))
         i += 1
-        if (i == amostra-1):
-            weight = calcWeight(readings, named_calibration)
-        #weights.append(weight)
+        #if (i == amostra-1):
+        weight, overWeight = calcWeight(readings, named_calibration)
+        if not overWeight:
+            weights.append(weight)
+        else:
+            i -= 1
 
         if (x_ref != x_balance or y_ref != y_balance):
             balance_dif.append((x_balance, y_balance))
@@ -234,4 +237,4 @@ def calcPontos(self, wiimote):
     #print(wiimote.__getattribute__())
     print(wiimote.request_status())
 
-    return balance_dif, weight, i
+    return balance_dif, weights, i

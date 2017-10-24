@@ -73,20 +73,8 @@ class Iem_wbb:
         self.newdevicewindow1.show()
 
     def on_search_device_activate(self, menuitem, data=None):
-        global wiimote
         self.searchdevicewindow1.show()
         self.spinner_in_search.start()
-
-        print("Buscando novo dispositivo")
-
-        wiimote = conect.searchWBB(self)
-
-        self.image_statusbar1.set_from_file("green.png")
-        self.label_statusbar1.set_text("Conectado")
-        self.spinner_in_search.stop()
-        self.save_device_in_search.set_sensitive(True)
-        self.device_name_in_search.set_sensitive(True)
-        self.capture_button.set_sensitive(True)
 
     def on_disconnect_activate(self, menuitem, data=None):
         global wiimote
@@ -141,6 +129,20 @@ class Iem_wbb:
         print("Seleção de dispositivo cancelada")
         self.saveddeviceswindow1.hide()
 
+    def on_start_search_button_clicked(self, widget):
+        global wiimote
+
+        print("Buscando novo dispositivo")
+
+        wiimote = conect.searchWBB(self)
+
+        self.image_statusbar1.set_from_file("green.png")
+        self.label_statusbar1.set_text("Conectado")
+        self.spinner_in_search.stop()
+        self.save_device_in_search.set_sensitive(True)
+        self.device_name_in_search.set_sensitive(True)
+        self.capture_button.set_sensitive(True)
+
     def on_cancel_button_clicked(self, widget):
         print("Adição de dispositivo cancelada")
         self.newdevicewindow1.hide()
@@ -184,7 +186,6 @@ class Iem_wbb:
         self.label_statusbar1.set_text("Conectado")
         self.capture_button.set_sensitive(True)
         self.saveddeviceswindow1.hide()
-        return
 
     def on_cancel_in_standup_clicked(self, widget):
         self.standupwindow1.hide()
@@ -195,38 +196,44 @@ class Iem_wbb:
     def on_savepacient_button_clicked(self, widget):
         global pacient
 
-        if (self.name_entry.get_text() == ""):
+        name = self.name_entry.get_text()
+        CPF = self.CPF_entry.get_text()
+        sex = self.sex_entry.get_text()
+        age = self.age_entry.get_text()
+        height = self.height_entry.get_text()
+
+        if (name == ""):
             self.messagedialog1.format_secondary_text("Nome inválido, tente novamente.")
             self.messagedialog1.show()
-        elif(self.sex_entry.get_text() == ""):
+        elif(CPF == ""):
+            self.messagedialog1.format_secondary_text("CPF inválido, tente novamente.")
+            self.messagedialog1.show()
+        elif(sex == ""):
             self.messagedialog1.format_secondary_text("Sexo inválido, tente novamente.")
             self.messagedialog1.show()
-        elif(self.age_entry.get_text() == ""):
+        elif(age == ""):
             self.messagedialog1.format_secondary_text("Idade inválida, tente novamente.")
             self.messagedialog1.show()
-        elif(self.height_entry.get_text() == ""):
+        elif(height == ""):
             self.messagedialog1.format_secondary_text("Altura inválida, tente novamente.")
             self.messagedialog1.show()
+        elif(not(manArq.makeDir(CPF))):
+            self.messagedialog1.format_secondary_text("O paciente já existe!")
+            self.messagedialog1.show()
         else:
-            name = self.name_entry.get_text()
-            sex = self.sex_entry.get_text()
-            age = self.age_entry.get_text()
-            height = self.height_entry.get_text()
+            print("Paciente salvo")
+            pacient = {'Nome': name, 'CPF': CPF, 'Sexo': sex, 'Idade': age, 'Altura': height}
+            self.savepacient_button.set_sensitive(False)
             self.name_entry.set_editable(False)
             self.sex_entry.set_editable(False)
             self.age_entry.set_editable(False)
             self.height_entry.set_editable(False)
+            self.CPF_entry.set_editable(False)
             self.name_entry.set_sensitive(False)
             self.sex_entry.set_sensitive(False)
             self.age_entry.set_sensitive(False)
             self.height_entry.set_sensitive(False)
-
-            manArq.makeDir(name)
-
-            print ("Paciente salvo")
-
-            pacient = {'Nome': name, 'Sexo': sex, 'Idade': age, 'Altura': height}
-            self.savepacient_button.set_sensitive(False)
+            self.CPF_entry.set_sensitive(False)
 
     def on_capture_button_clicked(self, widget):
         self.standupwindow1.show()
@@ -266,8 +273,8 @@ class Iem_wbb:
         self.axis.plot(MLs, APs,'-',color='r')
         self.canvas.draw()
         #plt.savefig(pacient['Nome'] + '/grafico original.png', dpi=500)
-        self.fig.canvas.print_png(pacient['Nome'] + '/grafico original')
-        manArq.importXlS(pacient, APs, MLs, pacient['Nome'])
+        self.fig.canvas.print_png(pacient['CPF'] + '/grafico original')
+        manArq.importXlS(pacient, APs, MLs, pacient['CPF'])
         APs, MLs = calc.geraAP_ML(APs, MLs)
 
         dis_resultante_total = calc.distanciaResultante(APs, MLs)
@@ -318,12 +325,12 @@ class Iem_wbb:
         self.axis2.set_ylabel('AP')
         self.axis2.set_xlabel('ML')
         self.canvas2.draw()
-        self.weight.set_text(str(weight))
+        self.weight.set_text(str(midWeight))
         self.weight.set_max_length(6)
         self.imc.set_text(str(imc))
         self.imc.set_max_length(5)
         #plt.savefig(pacient['Nome'] + '/grafico processado.png', dpi=500)
-        self.fig2.canvas.print_png(pacient['Nome'] + '/grafico processado')
+        self.fig2.canvas.print_png(pacient['CPF'] + '/grafico processado')
 
     def __init__(self):
         global dev_names, dev_macs
@@ -375,6 +382,7 @@ class Iem_wbb:
         self.name_entry = self.builder.get_object("name_entry")
         self.age_entry = self.builder.get_object("age_entry")
         self.height_entry = self.builder.get_object("height_entry")
+        self.CPF_entry = self.builder.get_object("CPF_entry")
         self.sex_entry = self.builder.get_object("sex_entry")
         self.weight = self.builder.get_object("weight")
         self.imc = self.builder.get_object("imc")
