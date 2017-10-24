@@ -7,6 +7,12 @@
     <property name="can_focus">False</property>
     <property name="stock">gtk-connect</property>
   </object>
+  <object class="GtkListStore" id="liststore_devices">
+    <columns>
+      <!-- column-name device_name -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
   <object class="GtkImage" id="new_device_image">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -142,6 +148,21 @@
                         <property name="image">connect_to_saved_device_image</property>
                         <property name="use_stock">False</property>
                         <signal name="activate" handler="on_connect_to_saved_device_activate" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSeparatorMenuItem">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="disconnect">
+                        <property name="label">Desconectar</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_stock">False</property>
+                        <signal name="activate" handler="on_disconnect_activate" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -448,9 +469,8 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkComboBox">
+                      <object class="GtkComboBox" id="combo_box_set_exam">
                         <property name="visible">True</property>
-                        <property name="sensitive">False</property>
                         <property name="can_focus">False</property>
                         <property name="margin_left">10</property>
                         <property name="margin_right">10</property>
@@ -978,8 +998,6 @@
                     <property name="sensitive">False</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="margin_left">10</property>
-                    <property name="margin_right">10</property>
                     <property name="image_position">right</property>
                     <signal name="clicked" handler="on_capture_button_clicked" swapped="no"/>
                   </object>
@@ -1015,12 +1033,6 @@
             <property name="spacing">5</property>
             <property name="baseline_position">top</property>
             <child>
-              <placeholder/>
-            </child>
-            <child>
-              <placeholder/>
-            </child>
-            <child>
               <object class="GtkLabel" id="label_statusbar1">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
@@ -1048,7 +1060,6 @@
           <packing>
             <property name="expand">True</property>
             <property name="fill">True</property>
-            <property name="pack_type">end</property>
             <property name="position">2</property>
           </packing>
         </child>
@@ -1277,6 +1288,7 @@
   </object>
   <object class="GtkWindow" id="saveddeviceswindow1">
     <property name="can_focus">False</property>
+    <property name="title" translatable="yes">Selecionar dispositivo</property>
     <property name="resizable">False</property>
     <property name="window_position">center-on-parent</property>
     <property name="deletable">False</property>
@@ -1292,8 +1304,8 @@
             <property name="can_focus">False</property>
             <property name="margin_left">10</property>
             <property name="margin_right">10</property>
-            <property name="margin_top">10</property>
-            <property name="margin_bottom">10</property>
+            <property name="margin_top">5</property>
+            <property name="margin_bottom">5</property>
             <property name="label" translatable="yes">Nome</property>
           </object>
           <packing>
@@ -1307,8 +1319,8 @@
             <property name="can_focus">False</property>
             <property name="margin_left">10</property>
             <property name="margin_right">10</property>
-            <property name="margin_top">10</property>
-            <property name="margin_bottom">10</property>
+            <property name="margin_top">5</property>
+            <property name="margin_bottom">5</property>
             <property name="label" translatable="yes">MAC</property>
           </object>
           <packing>
@@ -1319,11 +1331,13 @@
         <child>
           <object class="GtkEntry" id="mac_entry_in_saved">
             <property name="visible">True</property>
+            <property name="sensitive">False</property>
             <property name="can_focus">True</property>
             <property name="margin_left">10</property>
             <property name="margin_right">10</property>
             <property name="margin_top">10</property>
             <property name="margin_bottom">10</property>
+            <property name="placeholder_text" translatable="yes">00:00:00:00:00:00</property>
           </object>
           <packing>
             <property name="left_attach">1</property>
@@ -1353,6 +1367,7 @@
             <property name="receives_default">True</property>
             <property name="margin_top">10</property>
             <property name="margin_bottom">10</property>
+            <signal name="clicked" handler="on_cancel_in_saved_clicked" swapped="no"/>
           </object>
           <packing>
             <property name="left_attach">1</property>
@@ -1360,13 +1375,18 @@
           </packing>
         </child>
         <child>
-          <object class="GtkComboBoxText" id="combo_box_text_in_saved">
+          <object class="GtkComboBox" id="combo_box_in_saved">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_left">10</property>
-            <property name="margin_right">10</property>
             <property name="margin_top">10</property>
             <property name="margin_bottom">10</property>
+            <property name="model">liststore_devices</property>
+            <child>
+              <object class="GtkCellRendererText" id="Devices"/>
+              <attributes>
+                <attribute name="text">0</attribute>
+              </attributes>
+            </child>
           </object>
           <packing>
             <property name="left_attach">0</property>
@@ -1378,6 +1398,8 @@
   </object>
   <object class="GtkWindow" id="searchdevicewindow1">
     <property name="can_focus">False</property>
+    <property name="can_default">True</property>
+    <property name="double_buffered">False</property>
     <property name="title" translatable="yes">Busca de dispositivo</property>
     <property name="resizable">False</property>
     <property name="modal">True</property>

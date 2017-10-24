@@ -36,7 +36,6 @@ import calculos as calc
 '''
 
 def searchWBB(self):
-    ptime.sleep(3)
 
     wiimote = cwiid.Wiimote()
     wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
@@ -62,6 +61,28 @@ def searchWBB(self):
     #    wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
     #    wiimote.request_status()
     #    i+=1
+
+
+
+def connectToWBB(MAC):
+
+    wiimote = cwiid.Wiimote(MAC)
+    wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
+    wiimote.request_status()
+
+    i=1;
+    while (wiimote.state['ext_type'] != cwiid.EXT_BALANCE):
+        try:
+            wiimote = cwiid.Wiimote(MAC)
+            wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
+            wiimote.request_status()
+        except RuntimeError:
+            if (i>10):
+                quit()
+                break
+            print ("Error opening wiimote connection")
+            print ("attempt " + str(i))
+            i +=1
 
     return wiimote
 
@@ -170,5 +191,5 @@ def readWBB(self):
     print(wiimote.request_status())
     return balance_dif, weight, i
 
-def closeConection():
+def closeConection(wiimote):
     wiimote.close()
