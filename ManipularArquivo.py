@@ -11,7 +11,7 @@ from datetime import datetime
 def makeDir(path):
    os.mkdir('./'+path)
 
-def salvaWBB(dict_WBB):
+def saveWBB(dict_WBB):
     #Lendo arquivo
     workbook_read = xlrd.open_workbook('Devices.xls', formatting_info = True)
     worksheet_read = workbook_read.sheet_by_index(0)
@@ -28,7 +28,7 @@ def salvaWBB(dict_WBB):
     #Salvando Arquivo editado
     workbook_write.save('Devices.xls')
 
-def abreWBBs():
+def openWBBs():
     names = []
     macs = []
     workbook = xlrd.open_workbook('Devices.xls')
@@ -40,14 +40,14 @@ def abreWBBs():
 
     return names, macs
 
-def carregaPaciente(self, dict_paciente, path):
+def loadPacient(self, dict_paciente, path):
     lin, col = (0 ,0)
     workbook = xlrd.open_workbook(path)
     worksheet = workbook.sheet_by_index(1)
     workbook.save(path+'/'+dict_paciente['Nome']+'.xls')
     return
 
-def salvaPaciente(dict_paciente, path):
+def savePacient(dict_paciente, path):
     lin, col = (0, 0)
     workbook = xlwt.Workbook()
     worksheet = workbook.add_sheet(u'Dados do Paciente')
@@ -59,7 +59,7 @@ def salvaPaciente(dict_paciente, path):
 
     workbook.save(path + '/teste.xls')
 
-def importarXls(dict_paciente, APs, MLs, path):
+def importXlS(dict_paciente, APs, MLs, path):
 
     lin, col= (0,0)
     workbook = xlwt.Workbook()
@@ -108,7 +108,7 @@ def importarXls(dict_paciente, APs, MLs, path):
     #-------salvar a data------
     workbook.save(path+'/'+dict_paciente['Nome']+'.xls')
 
-def abrirXLS(path):
+def openXLS(path):
     workbook = xlrd.open_workbook(path)
     worksheet = workbook.sheet_by_index(1)
 
@@ -117,10 +117,6 @@ def abrirXLS(path):
             continue
         row = worksheet.row_values(row_num)
 
-'''def salvar(dados):
-    f = open('dados.txt', 'w')
-    for linha in dados:
-'''
 
 #if __name__ =="__main__":
- #   importarXls()
+ #   importXlS()

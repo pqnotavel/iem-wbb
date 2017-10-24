@@ -121,25 +121,26 @@ def gsc(readings, pos, named_calibration):
 		return 1700 * (reading - calibration[1]) / (calibration[2] - calibration[1]) + 1700
 
 def calcWeight( readings, calibrations ):
-	"""
-	Determine the weight of the user on the board in hundredths of a kilogram
-	"""
-	weight = 0
-	for sensor in ('right_top', 'right_bottom', 'left_top', 'left_bottom'):
-		reading = readings[sensor]
-		calibration = calibrations[sensor]
-		#if reading < calibration[0]:
-		#	print "Warning, %s reading below lower calibration value" % sensor
-		#if reading > calibration[2]:
-		#	print ("Warning, %s reading above upper calibration value" % sensor)
-		# 1700 appears to be the step the calibrations are against.
-		# 17kg per sensor is 68kg, 1/2 of the advertised Japanese weight limit.
-		if reading < calibration[1]:
-			weight += 1700 * (reading - calibration[0]) / (calibration[1] - calibration[0])
-		else:
-			weight += 1700 * (reading - calibration[1]) / (calibration[2] - calibration[1]) + 1700
-
-	return weight/100
+    """
+    Determine the weight of the user on the board in hundredths of a kilogram
+    """
+    weight = 0
+    overWeight = False
+    for sensor in ('right_top', 'right_bottom', 'left_top', 'left_bottom'):
+        reading = readings[sensor]
+        calibration = calibrations[sensor]
+        #if reading < calibration[0]:
+        #	print "Warning, %s reading below lower calibration value" % sensor
+        if reading > calibration[2]:
+            overWeight = True
+        #	print ("Warning, %s reading above upper calibration value" % sensor)
+        # 1700 appears to be the step the calibrations are against.
+        # 17kg per sensor is 68kg, 1/2 of the advertised Japanese weight limit.
+        if reading < calibration[1]:
+            weight += 1700 * (reading - calibration[0]) / (calibration[1] - calibration[0])
+        else:
+            weight += 1700 * (reading - calibration[1]) / (calibration[2] - calibration[1]) + 1700
+    return weight/100, overWeight
 
 def calcIMC(weight, size):
     return (weight /(size**2))

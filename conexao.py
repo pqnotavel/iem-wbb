@@ -105,7 +105,7 @@ def readWBB(self):
     i = 0
     amostra = 768
     t1 = ptime.time() + dt
-    #weights = []
+    weights = []
 
     while (i < amostra):
         wiimote.request_status()
@@ -133,9 +133,13 @@ def readWBB(self):
 
         # balance_lst.append((x_balance,y_balance))
         i += 1
-        if (i == amostra-1):
-            weight = calc.calcweight(readings, named_calibration)
-        #weights.append(weight)
+        #if (i == amostra-1):
+        #    weight, overWeight = calc.calcweight(readings, named_calibration)
+        weight, overWeight = calc.calcweight(readings, named_calibration)
+        if not overWeight:
+            weights.append(weight)
+        else:
+            i -=1
 
         if (x_ref != x_balance or y_ref != y_balance):
             balance_dif.append((x_balance, y_balance))
@@ -159,7 +163,7 @@ def readWBB(self):
     #wiimote.close()
     #print(wiimote.__getattribute__())
     print(wiimote.request_status())
-    return balance_dif, weight, i
+    return balance_dif, weights, i
 
 def closeConection(wiimote):
     wiimote.close()

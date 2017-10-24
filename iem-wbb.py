@@ -90,7 +90,7 @@ class Iem_wbb:
 
     def on_disconnect_activate(self, menuitem, data=None):
         global wiimote
-        wiimote.conect.closeConection()
+        conect.closeConection(wiimote)
         self.image_statusbar1.set_from_file("red.png")
         self.label_statusbar1.set_text("Não conectado")
 
@@ -124,7 +124,7 @@ class Iem_wbb:
             self.messagedialog1.show()
         else:
             WBB = {'Nome':name, 'MAC':mac}
-            manArq.salvaWBB(WBB)
+            manArq.saveWBB(WBB)
 
             print("Dispositivo adicionado")
 
@@ -133,7 +133,7 @@ class Iem_wbb:
             self.newdevicewindow1.hide()
 
             self.liststore_devices.clear()
-            dev_names, dev_macs = manArq.abreWBBs()
+            dev_names, dev_macs = manArq.openWBBs()
             for i in range(len(dev_names)):
                  self.liststore_devices.append([dev_names[i]])
 
@@ -179,8 +179,10 @@ class Iem_wbb:
         MAC = self.mac_entry_in_saved.get_text()
         print (MAC)
 
-        #wiimote = conect.connectToWBB(MAC)
-
+        wiimote = conect.connectToWBB(MAC)
+        self.image_statusbar1.set_from_file("green.png")
+        self.label_statusbar1.set_text("Conectado")
+        self.capture_button.set_sensitive(True)
         self.saveddeviceswindow1.hide()
         return
 
@@ -234,13 +236,13 @@ class Iem_wbb:
 
         global APs, MLs, pacient, wiimote, dev_macs, dev_names
 
-        balance, weight, pontos = calc.calcPontos(self, wiimote)
-        # = calcPesoMedio(weights)
-        imc = calc.calcIMC(weight, float(pacient['Altura']))
+        balance, weights, pontos = calc.calcPontos(self, wiimote)
+        midWeight = calc.calcPesoMedio(weights)
+        imc = calc.calcIMC(midWeight, float(pacient['Altura']))
 
         self.points_entry.set_text(str(pontos))
 
-        pacient['Peso'] = weight
+        pacient['Peso'] = midWeight
         pacient['IMC'] = imc
 
         for (x,y) in balance:
@@ -265,7 +267,7 @@ class Iem_wbb:
         self.canvas.draw()
         #plt.savefig(pacient['Nome'] + '/grafico original.png', dpi=500)
         self.fig.canvas.print_png(pacient['Nome'] + '/grafico original')
-        manArq.importarXls(pacient, APs, MLs, pacient['Nome'])
+        manArq.importXlS(pacient, APs, MLs, pacient['Nome'])
         APs, MLs = calc.geraAP_ML(APs, MLs)
 
         dis_resultante_total = calc.distanciaResultante(APs, MLs)
@@ -400,7 +402,7 @@ class Iem_wbb:
         #Liststores
         self.liststore_devices = self.builder.get_object("liststore_devices")
         self.liststore_devices.clear()
-        dev_names, dev_macs = manArq.abreWBBs()
+        dev_names, dev_macs = manArq.openWBBs()
         for i in range(len(dev_names)):
              self.liststore_devices.append([dev_names[i]])
 
