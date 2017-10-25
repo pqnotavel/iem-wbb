@@ -166,13 +166,13 @@ def calcPontos(self, wiimote):
     y_ref = 0.0
 
 
-    duration = 1  # second
-    freq = 440  # Hz
-    os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % (duration, freq))
+    #duration = 1  # second
+    #freq = 440  # Hz
+    #os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % (duration, freq))
     #print("Preperados!!!!!")
     #ptime.sleep(10)
     #print("Já!!!!!!!!!!")
-    os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % (duration, freq))
+    #os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % (duration, freq))
     start = ptime.time()
     # dt = 0.03125
     dt = 0.040
@@ -227,7 +227,7 @@ def calcPontos(self, wiimote):
         t1 += dt
 
     stop = ptime.time()
-    os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % (duration, freq))
+    #os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % (duration, freq))
     print("dt = ", stop - start)
     print("Balance")
     print(len(balanca))

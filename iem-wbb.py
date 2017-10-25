@@ -27,7 +27,7 @@ WBB = {}
 dev_names = []
 dev_macs = []
 
-global wiimote
+global wiimote, battery
 
 class Iem_wbb:
     global pacient
@@ -65,6 +65,10 @@ class Iem_wbb:
             index = model.get_path(tree_iter)[0]
             self.mac_entry_in_saved.set_text(dev_macs[index])
             self.connect_in_saved.set_sensitive(True)
+            self.instructionslabel_in_saved.set_sensitive(True)
+            self.instructionslabel_in_saved.set_visible(True)
+            self.image_in_saved.set_sensitive(True)
+            self.image_in_saved.set_visible(True)
         return True
 
     #Show newdevicewindow1
@@ -176,12 +180,14 @@ class Iem_wbb:
         self.searchdevicewindow1.hide()
 
     def on_connect_in_saved_clicked(self, widget):
-        global wiimote
+        global wiimote, battery
 
         MAC = self.mac_entry_in_saved.get_text()
         print (MAC)
 
         wiimote = conect.connectToWBB(MAC)
+        wiimote.status['battery']
+
         self.image_statusbar1.set_from_file("green.png")
         self.label_statusbar1.set_text("Conectado")
         self.capture_button.set_sensitive(True)
@@ -205,22 +211,29 @@ class Iem_wbb:
         if (name == ""):
             self.messagedialog1.format_secondary_text("Nome inválido, tente novamente.")
             self.messagedialog1.show()
+            self.name_entry.grab_focus()
         elif(CPF == ""):
             self.messagedialog1.format_secondary_text("CPF inválido, tente novamente.")
             self.messagedialog1.show()
+            self.CPF_entry.grab_focus()
         elif(sex == ""):
             self.messagedialog1.format_secondary_text("Sexo inválido, tente novamente.")
             self.messagedialog1.show()
+            self.sex_entry.grab_focus()
         elif(age == ""):
             self.messagedialog1.format_secondary_text("Idade inválida, tente novamente.")
             self.messagedialog1.show()
+            self.age_entry.grab_focus()
         elif(height == ""):
             self.messagedialog1.format_secondary_text("Altura inválida, tente novamente.")
             self.messagedialog1.show()
+            self.height_entry.grab_focus()
         elif(not(manArq.makeDir(CPF))):
             self.messagedialog1.format_secondary_text("O paciente já existe!")
             self.messagedialog1.show()
+            self.CPF_entry.grab_focus()
         else:
+            height = height.replace(',', '.', 1)
             print("Paciente salvo")
             pacient = {'Nome': name, 'CPF': CPF, 'Sexo': sex, 'Idade': age, 'Altura': height}
             self.savepacient_button.set_sensitive(False)
@@ -228,6 +241,7 @@ class Iem_wbb:
             self.sex_entry.set_editable(False)
             self.age_entry.set_editable(False)
             self.height_entry.set_editable(False)
+            self.height_entry.set_text(height)
             self.CPF_entry.set_editable(False)
             self.name_entry.set_sensitive(False)
             self.sex_entry.set_sensitive(False)
@@ -273,8 +287,7 @@ class Iem_wbb:
         self.axis.plot(MLs, APs,'-',color='r')
         self.canvas.draw()
         #plt.savefig(pacient['Nome'] + '/grafico original.png', dpi=500)
-        self.fig.canvas.print_png(pacient['CPF'] + '/grafico original')
-        manArq.importXlS(pacient, APs, MLs, pacient['CPF'])
+
         APs, MLs = calc.geraAP_ML(APs, MLs)
 
         dis_resultante_total = calc.distanciaResultante(APs, MLs)
@@ -330,7 +343,14 @@ class Iem_wbb:
         self.imc.set_text(str(imc))
         self.imc.set_max_length(5)
         #plt.savefig(pacient['Nome'] + '/grafico processado.png', dpi=500)
+        self.save_exam_button.set_sensitive(True)
+
+    def on_save_exam_button_clicked(self, widget):
+        global pacient
+
+        self.fig.canvas.print_png(pacient['CPF'] + '/grafico original')
         self.fig2.canvas.print_png(pacient['CPF'] + '/grafico processado')
+        manArq.importXlS(pacient, APs, MLs, pacient['CPF'])
 
     def __init__(self):
         global dev_names, dev_macs
@@ -338,20 +358,20 @@ class Iem_wbb:
         self.gladeFile = "iem-wbb.glade"
         self.builder = Gtk.Builder()
         self.builder.add_from_file(self.gladeFile)
-
+        go = self.builder.get_object
         self.builder.connect_signals(self)
 
         #Windows
-        self.window = self.builder.get_object("window1")
-        self.scrolledwindow1 = self.builder.get_object("scrolledwindow1")
-        self.scrolledwindow2 = self.builder.get_object("scrolledwindow2")
-        self.scrolledwindow3 = self.builder.get_object("scrolledwindow3")
-        self.newdevicewindow1 = self.builder.get_object("newdevicewindow1")
-        self.popoverwindow1 = self.builder.get_object("popoverwindow1")
-        self.messagedialog1 = self.builder.get_object("messagedialog1")
-        self.standupwindow1 = self.builder.get_object("standupwindow1")
-        self.searchdevicewindow1 = self.builder.get_object("searchdevicewindow1")
-        self.saveddeviceswindow1 = self.builder.get_object("saveddeviceswindow1")
+        self.window = go("window1")
+        self.scrolledwindow1 = go("scrolledwindow1")
+        self.scrolledwindow2 = go("scrolledwindow2")
+        self.scrolledwindow3 = go("scrolledwindow3")
+        self.newdevicewindow1 = go("newdevicewindow1")
+        self.popoverwindow1 = go("popoverwindow1")
+        self.messagedialog1 = go("messagedialog1")
+        self.standupwindow1 = go("standupwindow1")
+        self.searchdevicewindow1 = go("searchdevicewindow1")
+        self.saveddeviceswindow1 = go("saveddeviceswindow1")
 
         #Delete-events
         self.searchdevicewindow1.connect("delete-event", self.close_searchdevicewindow1)
@@ -360,55 +380,60 @@ class Iem_wbb:
         self.saveddeviceswindow1.connect("delete-event", self.close_saveddeviceswindow1)
 
         #Images
-        self.image_statusbar1 = self.builder.get_object("image_statusbar1")
+        self.image_statusbar1 = go("image_statusbar1")
+        self.image_in_saved = go("image_in_saved")
 
         #Grids
-        self.grid_graphs = self.builder.get_object("grid_graphs")
+        self.grid_graphs = go("grid_graphs")
 
         #Buttons
-        self.capture_button = self.builder.get_object("capture_button")
-        self.savepacient_button = self.builder.get_object("savepacient_button")
-        self.start_capture_button = self.builder.get_object("start_capture_button")
-        self.save_device_in_search = self.builder.get_object("save_device_in_search")
-        self.connect_in_saved = self.builder.get_object("connect_in_saved")
+        self.capture_button = go("capture_button")
+        self.savepacient_button = go("savepacient_button")
+        self.start_capture_button = go("start_capture_button")
+        self.save_device_in_search = go("save_device_in_search")
+        self.connect_in_saved = go("connect_in_saved")
+        self.save_exam_button = go("save_exam_button")
 
         #Spinners
-        self.spinner_in_search = self.builder.get_object("spinner_in_search")
+        self.spinner_in_search = go("spinner_in_search")
 
         #Labels
-        self.label_statusbar1 = self.builder.get_object("label_statusbar1")
+        self.label_statusbar1 = go("label_statusbar1")
+        self.batterylabel = go("batterylabel")
+        self.battery_percent_label = go("battery_percent_label")
+        self.instructionslabel_in_saved = go("instructionslabel_in_saved")
 
         #Entrys
-        self.name_entry = self.builder.get_object("name_entry")
-        self.age_entry = self.builder.get_object("age_entry")
-        self.height_entry = self.builder.get_object("height_entry")
-        self.CPF_entry = self.builder.get_object("CPF_entry")
-        self.sex_entry = self.builder.get_object("sex_entry")
-        self.weight = self.builder.get_object("weight")
-        self.imc = self.builder.get_object("imc")
-        self.device_name_in_search = self.builder.get_object("device_name_in_search")
-        self.device_mac_in_search = self.builder.get_object("device_mac_in_search")
-        self.device_name_in_new = self.builder.get_object("device_name_in_new")
-        self.device_mac_in_new = self.builder.get_object("device_mac_in_new")
-        self.mac_entry_in_saved = self.builder.get_object("mac_entry_in_saved")
+        self.name_entry = go("name_entry")
+        self.age_entry = go("age_entry")
+        self.height_entry = go("height_entry")
+        self.CPF_entry = go("CPF_entry")
+        self.sex_entry = go("sex_entry")
+        self.weight = go("weight")
+        self.imc = go("imc")
+        self.device_name_in_search = go("device_name_in_search")
+        self.device_mac_in_search = go("device_mac_in_search")
+        self.device_name_in_new = go("device_name_in_new")
+        self.device_mac_in_new = go("device_mac_in_new")
+        self.mac_entry_in_saved = go("mac_entry_in_saved")
 
-        self.entry_Mdist = self.builder.get_object("mdist_")
-        self.entry_Rdist_AP = self.builder.get_object("rdist_ap")
-        self.entry_Rdist_ML = self.builder.get_object("rdist_ml")
-        self.entry_Rdist_TOTAL = self.builder.get_object("rdist_t")
-        self.entry_TOTEX_AP = self.builder.get_object("totex_ap")
-        self.entry_TOTEX_ML = self.builder.get_object("totex_ml")
-        self.entry_TOTEX_TOTAL = self.builder.get_object("totex_t")
-        self.entry_MVELO_AP = self.builder.get_object("mvelo_ap")
-        self.entry_MVELO_ML = self.builder.get_object("mvelo_ml")
-        self.entry_MVELO_TOTAL = self.builder.get_object("mvelo_t")
-        self.points_entry = self.builder.get_object("points_entry")
+        self.entry_Mdist = go("mdist_")
+        self.entry_Rdist_AP = go("rdist_ap")
+        self.entry_Rdist_ML = go("rdist_ml")
+        self.entry_Rdist_TOTAL = go("rdist_t")
+        self.entry_TOTEX_AP = go("totex_ap")
+        self.entry_TOTEX_ML = go("totex_ml")
+        self.entry_TOTEX_TOTAL = go("totex_t")
+        self.entry_MVELO_AP = go("mvelo_ap")
+        self.entry_MVELO_ML = go("mvelo_ml")
+        self.entry_MVELO_TOTAL = go("mvelo_t")
+        self.points_entry = go("points_entry")
 
         #Combo-boxes
-        self.combo_box_in_saved = self.builder.get_object("combo_box_in_saved")
+        self.combo_box_in_saved = go("combo_box_in_saved")
 
         #Liststores
-        self.liststore_devices = self.builder.get_object("liststore_devices")
+        self.liststore_devices = go("liststore_devices")
         self.liststore_devices.clear()
         dev_names, dev_macs = manArq.openWBBs()
         for i in range(len(dev_names)):
@@ -417,9 +442,17 @@ class Iem_wbb:
         #Change Events
         self.combo_box_in_saved.connect("changed", self.combo_box_in_saved_changed)
 
+        #Bars
+        self.battery_levelbar1 = go("battery_levelbar1")
+        self.battery_levelbar1.set_value(0.88)
+
+        self.progressbar = go("progressbar")
+
+
         #Plots
         '''Original Graph'''
         self.fig = plt.figure()
+        self.fig.suptitle('Original')
 
         self.axis = self.fig.add_subplot(111)
         self.axis.set_ylabel('AP')
@@ -429,6 +462,7 @@ class Iem_wbb:
 
         '''Processed Graph'''
         self.fig2 = plt.figure()
+        self.fig2.suptitle('Processado')
 
         self.axis2 = self.fig2.add_subplot(111)
         self.axis2.set_ylabel('AP')
@@ -437,16 +471,27 @@ class Iem_wbb:
         self.scrolledwindow2.add_with_viewport(self.canvas2)
 
         '''Frequency Graph'''
-        self.fig3 = plt.figure()
+        '''self.fig3 = plt.figure()
+
+        self.axis3 = self.fig3.add_subplot(111)
+        self.canvas3 = FigureCanvas(self.fig3)
+        self.scrolledwindow3.add_with_viewport(self.canvas3)'''
+
+        self.fig3 = Figure(figsize=(15,5))
+        self.fig3.suptitle('Transformada de Fourier')
 
         self.axis3 = self.fig3.add_subplot(111)
         self.axis3.set_ylabel('AP')
         self.axis3.set_xlabel('ML')
         self.canvas3 = FigureCanvas(self.fig3)
+        self.canvas3.set_has_window(True)
         self.scrolledwindow3.add_with_viewport(self.canvas3)
 
         self.window.show_all()
-        self.grid_graphs.set_sensitive(True)
+        self.progressbar.set_visible(False)
+        self.battery_levelbar1.set_visible(False)
+        self.batterylabel.set_visible(False)
+        self.battery_percent_label.set_visible(False)
 
 if __name__ == "__main__":
     main = Iem_wbb()
