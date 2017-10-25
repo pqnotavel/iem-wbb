@@ -283,9 +283,9 @@ class Iem_wbb:
 
         dis_media = calc.distanciaMedia(dis_resultante_total)
 
-        dis_rms_total = calc.dist_RMS(dis_resultante_total)
-        dis_rms_AP = calc.dist_RMS(dis_resultante_AP)
-        dis_rms_ML = calc.dist_RMS(dis_resultante_ML)
+        dis_rms_total = calc.distRMS(dis_resultante_total)
+        dis_rms_AP = calc.distRMS(dis_resultante_AP)
+        dis_rms_ML = calc.distRMS(dis_resultante_ML)
 
         totex_total = calc.totex(APs, MLs)
         totex_AP = calc.totexParcial(APs)

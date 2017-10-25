@@ -26,7 +26,7 @@ def distanciaResultanteParcial(APouML):
         distancia_resultparcial.append(DR)
     return distancia_resultparcial
 
-def dist_RMS (dist_resultante):
+def distRMS (dist_resultante):
     d_R_quadrada =[]
     for _ in range(len(dist_resultante)):
         dist_result_quadrada = (dist_resultante[_]**2)
@@ -55,6 +55,7 @@ def geraAP_ML(valx, valy):
     return valores_AP, valores_ML
 
 from random import*
+
 #Gera números aleatórios entre o intervalo x_inicial até x_final
 def geraNumeroAleatorio(x_Inicial, x_Final, y_Inicial, y_Final, N):
     valores_x =[]

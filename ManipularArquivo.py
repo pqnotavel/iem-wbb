@@ -64,7 +64,7 @@ def savePacient(dict_paciente, path):
 
 def importXlS(dict_paciente, APs, MLs, path):
 
-    lin, col= (0,0)
+    #lin, col= (0,0)
     workbook = xlwt.Workbook()
     worksheet = workbook.add_sheet(u'Dados do Paciente')
     #salvando a primeira tabela do excel
@@ -111,14 +111,14 @@ def importXlS(dict_paciente, APs, MLs, path):
     #-------salvar a data------
     workbook.save(path+'/'+dict_paciente['Nome']+'.xls')
 
-def openXLS(path):
-    workbook = xlrd.open_workbook(path)
-    worksheet = workbook.sheet_by_index(1)
-
-    for row_num in range(worksheet.nrows):
-        if row_num == 0:
-            continue
-        row = worksheet.row_values(row_num)
+# openXLS(path):
+#    workbook = xlrd.open_workbook(path)
+#    worksheet = workbook.sheet_by_index(1)
+#
+#    for row_num in range(worksheet.nrows):
+#        if row_num == 0:
+#            continue
+#        row = worksheet.row_values(row_num)
 
 
 #if __name__ =="__main__":
