@@ -1,24 +1,27 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import sys
-import cwiid
+#import sys
+#import cwiid
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import Gdk
 
-from matplotlib.figure import Figure
-from numpy import arange, pi, random, linspace
-import os
-import time as ptime
-from math import sqrt
-import matplotlib.pyplot as plt
+#from numpy import arange, pi, random, linspace
+#import os
+#import time as ptime
+#from math import sqrt
+#import matplotlib.pyplot as plt
 import calculos as calc
 import conexao as conect
 import ManipularArquivo as manArq
+
+from matplotlib.figure import Figure
 from matplotlib.backends.backend_gtk3cairo import FigureCanvasGTK3Cairo as FigureCanvas
-import pylab as py
+from matplotlib.backends.backend_gtk3 import NavigationToolbar2GTK3 as NavigationToolbar
+
+#import pylab as py
 
 APs = []
 MLs = []
@@ -27,7 +30,7 @@ WBB = {}
 dev_names = []
 dev_macs = []
 
-global wiimote, battery
+global wiimote, battery, child, relative, nt, plotTitle
 
 class Iem_wbb:
     global pacient
@@ -40,22 +43,24 @@ class Iem_wbb:
         print("Quit from menu")
         Gtk.main_quit()
 
-    #Clear all* buffers to create a new consult
+    #Destroy and rebuild all
     def on_new_activate(self, menuitem, data=None):
-        self.name_entry.set_text('')
-        self.sex_entry.set_text('')
-        self.age_entry.set_text('')
-        self.height_entry.set_text('')
-        self.name_entry.set_editable(True)
-        self.sex_entry.set_editable(True)
-        self.age_entry.set_editable(True)
-        self.height_entry.set_editable(True)
+        #self.name_entry.set_text('')
+        #self.sex_entry.set_text('')
+        #self.age_entry.set_text('')
+        #self.height_entry.set_text('')
+        #self.name_entry.set_editable(True)
+        #self.sex_entry.set_editable(True)
+        #self.age_entry.set_editable(True)
+        #self.height_entry.set_editable(True)
+        self.window.hide()
+        self.__init__()
 
-    #Nothing to do (not implemented yet)
+    #Show saved devices window
     def on_connect_to_saved_device_activate(self, menuitem, data=None):
         self.saveddeviceswindow1.show()
 
-
+    #Saved devices selection
     def combo_box_in_saved_changed(self, widget):
         global dev_macs
 
@@ -76,10 +81,12 @@ class Iem_wbb:
         print("Adicionando novo dispositivo")
         self.newdevicewindow1.show()
 
+    #Show searchdevicewindow1
     def on_search_device_activate(self, menuitem, data=None):
         self.searchdevicewindow1.show()
         self.spinner_in_search.start()
 
+    #Disconnet wiimote
     def on_disconnect_activate(self, menuitem, data=None):
         global wiimote
         conect.closeConection(wiimote)
@@ -102,7 +109,15 @@ class Iem_wbb:
         self.saveddeviceswindow1.hide()
         return True
 
-    #Hide newdevicewindow1
+    def close_advancedgraphswindow(self, arg1, arg2):
+        global child, relative, nt
+        self.boxAdvanced.remove(child)
+        self.boxAdvanced.remove(nt)
+        relative.pack_start(child, expand=True, fill=True, padding=0)
+        self.advancedgraphswindow.hide()
+        return True
+
+    #Adding new device
     def on_add_button_clicked(self, widget):
         global dev_macs, dev_names
 
@@ -155,21 +170,56 @@ class Iem_wbb:
         print("Dispositivo adicionado")
         self.newdevicewindow1.hide()
 
-    def on_scrolledwindow1_button_press_event(self, widget, event):
-        if event.type == Gdk.EventType.BUTTON_PRESS and event.button == 3:
-            self.popoverwindow1.popup()
+    def on_boxOriginal_button_press_event(self, widget, event):
+        global plotTitle, child, relative, nt
+        if event.type == Gdk.EventType.DOUBLE_BUTTON_PRESS and event.button == 1:
+            print("Janela Avançada")
 
-    def on_savegraph_button_clicked(self, widget):
-        self.popoverwindow1.popdown()
-        self.fig.canvas.print_png(pacient['Nome'] + '/grafico original')
-        print("Gráfico salvo")
+            plotTitle = 'Original'
+
+            self.boxOriginal.set_focus_child(self.canvas)
+            relative = self.boxOriginal
+            child = relative.get_focus_child()
+            relative.remove(child)
+            self.boxAdvanced.pack_start(child, expand=True, fill=True, padding=0)
+            nt = NavigationToolbar(child, self.advancedgraphswindow)
+            self.boxAdvanced.pack_start(nt, expand=False, fill=True, padding=0)
+            self.advancedgraphswindow.show()
+
+    def on_boxProcessado_button_press_event(self, widget, event):
+        global plotTitle, child, relative, nt
+        if event.type == Gdk.EventType.DOUBLE_BUTTON_PRESS and event.button == 1:
+            print("Janela Avançada")
+
+            plotTitle = 'Processado'
+
+            self.boxProcessado.set_focus_child(self.canvas2)
+            relative = self.boxProcessado
+            child = relative.get_focus_child()
+            relative.remove(child)
+            self.boxAdvanced.pack_start(child, expand=True, fill=True, padding=0)
+            nt = NavigationToolbar(child, self.advancedgraphswindow)
+            self.boxAdvanced.pack_start(nt, expand=False, fill=True, padding=0)
+            self.advancedgraphswindow.show()
+
+    def on_boxFourier_button_press_event(self, widget, event):
+        global plotTitle, child, relative, nt
+        if event.type == Gdk.EventType.DOUBLE_BUTTON_PRESS and event.button == 1:
+            print("Janela Avançada")
+
+            plotTitle = 'Fourier'
+
+            self.boxFourier.set_focus_child(self.canvas3)
+            relative = self.boxFourier
+            child = relative.get_focus_child()
+            relative.remove(child)
+            self.boxAdvanced.pack_start(child, expand=True, fill=True, padding=0)
+            nt = NavigationToolbar(child, self.advancedgraphswindow)
+            self.boxAdvanced.pack_start(nt, expand=False, fill=True, padding=0)
+            self.advancedgraphswindow.show()
 
     def on_advancedwindow_button_clicked(self, widget):
-        self.popoverwindow1.popdown()
-        print("Janela Avançada")
-        #mng = plt.get_current_fig_manager()
-        #mng.resize(*mng.window.maxsize())
-        py.show(self.fig.canvas)
+        pass
 
     def on_save_device_in_search_clicked(self, widget):
         self.spinner_in_search.stop()
@@ -361,23 +411,29 @@ class Iem_wbb:
         go = self.builder.get_object
         self.builder.connect_signals(self)
 
+        #Boxes
+        self.vbox1 = go("vbox1")
+        self.boxFourier = go("boxFourier")
+        self.boxAdvanced = go("boxAdvanced")
+
         #Windows
         self.window = go("window1")
-        self.scrolledwindow1 = go("scrolledwindow1")
-        self.scrolledwindow2 = go("scrolledwindow2")
-        self.scrolledwindow3 = go("scrolledwindow3")
+        self.boxOriginal = go("boxOriginal")
+        self.boxProcessado = go("boxProcessado")
+        #self.scrolledwindow3 = go("scrolledwindow3")
         self.newdevicewindow1 = go("newdevicewindow1")
-        self.popoverwindow1 = go("popoverwindow1")
         self.messagedialog1 = go("messagedialog1")
         self.standupwindow1 = go("standupwindow1")
         self.searchdevicewindow1 = go("searchdevicewindow1")
         self.saveddeviceswindow1 = go("saveddeviceswindow1")
+        self.advancedgraphswindow = go("advancedgraphswindow")
 
         #Delete-events
         self.searchdevicewindow1.connect("delete-event", self.close_searchdevicewindow1)
         self.newdevicewindow1.connect("delete-event", self.close_newdevicewindow1)
         self.standupwindow1.connect("delete-event", self.close_standupwindow1)
         self.saveddeviceswindow1.connect("delete-event", self.close_saveddeviceswindow1)
+        self.advancedgraphswindow.connect("delete-event", self.close_advancedgraphswindow)
 
         #Images
         self.image_statusbar1 = go("image_statusbar1")
@@ -451,24 +507,26 @@ class Iem_wbb:
 
         #Plots
         '''Original Graph'''
-        self.fig = plt.figure()
-        self.fig.suptitle('Original')
+        self.fig = Figure(dpi=50)
+        self.fig.suptitle('Original', fontsize=20)
 
         self.axis = self.fig.add_subplot(111)
-        self.axis.set_ylabel('AP')
-        self.axis.set_xlabel('ML')
+        self.axis.set_ylabel('AP', fontsize = 16)
+        self.axis.set_xlabel('ML', fontsize = 16)
         self.canvas = FigureCanvas(self.fig)
-        self.scrolledwindow1.add_with_viewport(self.canvas)
+        self.boxOriginal.pack_start(self.canvas, expand=True, fill=True, padding=0)
+        #self.scrolledwindow1.add_with_viewport(self.canvas)
 
         '''Processed Graph'''
-        self.fig2 = plt.figure()
-        self.fig2.suptitle('Processado')
+        self.fig2 = Figure(dpi=50)
+        self.fig2.suptitle('Processado', fontsize=20)
 
         self.axis2 = self.fig2.add_subplot(111)
-        self.axis2.set_ylabel('AP')
-        self.axis2.set_xlabel('ML')
+        self.axis2.set_ylabel('AP', fontsize = 16)
+        self.axis2.set_xlabel('ML', fontsize = 16)
         self.canvas2 = FigureCanvas(self.fig2)
-        self.scrolledwindow2.add_with_viewport(self.canvas2)
+        self.boxProcessado.pack_start(self.canvas2, expand=True, fill=True, padding=0)
+        #self.scrolledwindow2.add_with_viewport(self.canvas2)
 
         '''Frequency Graph'''
         '''self.fig3 = plt.figure()
@@ -477,15 +535,16 @@ class Iem_wbb:
         self.canvas3 = FigureCanvas(self.fig3)
         self.scrolledwindow3.add_with_viewport(self.canvas3)'''
 
-        self.fig3 = Figure(figsize=(15,5))
-        self.fig3.suptitle('Transformada de Fourier')
-
+        self.fig3 = Figure(dpi=50)
+        self.fig3.suptitle('Transformada de Fourier', fontsize=20)
         self.axis3 = self.fig3.add_subplot(111)
-        self.axis3.set_ylabel('AP')
-        self.axis3.set_xlabel('ML')
+        self.axis3.set_ylabel('AP', fontsize = 16)
+        self.axis3.set_xlabel('ML', fontsize = 16)
         self.canvas3 = FigureCanvas(self.fig3)
-        self.canvas3.set_has_window(True)
-        self.scrolledwindow3.add_with_viewport(self.canvas3)
+        self.boxFourier.pack_start(self.canvas3, expand=True, fill=True, padding=0)
+        #self.nt = NavigationToolbar(self.canvas3, self.window)
+        #self.boxFourier.pack_start(self.nt, expand=False, fill=True, padding=10)
+
 
         self.window.show_all()
         self.progressbar.set_visible(False)
