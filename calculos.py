@@ -3,6 +3,12 @@
 import cwiid
 import os
 import time as ptime
+import threading
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
+from gi.repository import Gdk
+from gi.repository import GObject
 
 def distanciaMedia (lista_valores):
     soma = sum(list(lista_valores))
@@ -149,6 +155,11 @@ def calcIMC(weight, size):
 def calcPesoMedio(weights):
     return sum(weights)/len(weights)
 
+def updateProgressBar(self, i, amostra):
+    GObject.threads_init()
+    self.progressbar.set_fraction(i/amostra)
+    
+
 def calcPontos(self, wiimote):
 
     wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
@@ -181,7 +192,7 @@ def calcPontos(self, wiimote):
     amostra = 768
     t1 = ptime.time() + dt
     weights = []
-
+    t = threading.Thread(target=updateProgressBar, args=(self, i, amostra))
     while (i < amostra):
         wiimote.request_status()
         readings = wiimote.state['balance']
@@ -225,6 +236,8 @@ def calcPontos(self, wiimote):
             pass
         # t1 = ptime.time() + .02
         t1 += dt
+
+        t.start()
 
     stop = ptime.time()
     #os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % (duration, freq))

@@ -7,6 +7,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import Gdk
+from gi.repository import GObject
 
 #from numpy import arange, pi, random, linspace
 #import os
@@ -16,6 +17,7 @@ from gi.repository import Gdk
 import calculos as calc
 import conexao as conect
 import ManipularArquivo as manArq
+import _thread
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_gtk3cairo import FigureCanvasGTK3Cairo as FigureCanvas
@@ -151,10 +153,18 @@ class Iem_wbb:
     def on_start_search_button_clicked(self, widget):
         global wiimote
 
+        self.image_statusbar1.set_from_file("red.png")
+        self.label_statusbar1.set_text("Não conectado")
+
         print("Buscando novo dispositivo")
 
         wiimote = conect.searchWBB(self)
 
+        self.progressbar.set_visible(True)
+        self.battery_levelbar1.set_visible(True)
+        self.batterylabel.set_visible(True)
+        self.battery_percent_label.set_visible(True)
+        
         self.image_statusbar1.set_from_file("green.png")
         self.label_statusbar1.set_text("Conectado")
         self.spinner_in_search.stop()
@@ -232,11 +242,18 @@ class Iem_wbb:
     def on_connect_in_saved_clicked(self, widget):
         global wiimote, battery
 
+        self.image_statusbar1.set_from_file("red.png")
+        self.label_statusbar1.set_text("Não conectado")
+
         MAC = self.mac_entry_in_saved.get_text()
         print (MAC)
 
         wiimote = conect.connectToWBB(MAC)
         wiimote.status['battery']
+        self.progressbar.set_visible(True)
+        self.battery_levelbar1.set_visible(True)
+        self.batterylabel.set_visible(True)
+        self.battery_percent_label.set_visible(True)
 
         self.image_statusbar1.set_from_file("green.png")
         self.label_statusbar1.set_text("Conectado")
@@ -501,9 +518,8 @@ class Iem_wbb:
         #Bars
         self.battery_levelbar1 = go("battery_levelbar1")
         self.battery_levelbar1.set_value(0.88)
-
+        self.battery_percent_label.set_text(str(int(100*float(self.battery_levelbar1.get_value())))+"%")
         self.progressbar = go("progressbar")
-
 
         #Plots
         '''Original Graph'''
