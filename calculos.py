@@ -192,7 +192,7 @@ def calcPontos(self, wiimote):
     amostra = 768
     t1 = ptime.time() + dt
     weights = []
-    t = threading.Thread(target=updateProgressBar, args=(self, i, amostra))
+    #t = threading.Thread(target=updateProgressBar, args=(self, i, amostra))
     while (i < amostra):
         wiimote.request_status()
         readings = wiimote.state['balance']
@@ -237,7 +237,7 @@ def calcPontos(self, wiimote):
         # t1 = ptime.time() + .02
         t1 += dt
 
-        t.start()
+        #t.start()
 
     stop = ptime.time()
     #os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % (duration, freq))

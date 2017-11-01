@@ -11,7 +11,7 @@ from datetime import datetime
 def makeDir(path):
     if os.path.isdir(path):
         return False
-    os.mkdir('./'+path)
+    os.mkdir('./Pacients/'+path)
     return True
 
 def saveWBB(dict_WBB):
@@ -107,9 +107,18 @@ def importXlS(dict_paciente, APs, MLs, path):
     for linha, valor in enumerate(MLs):
         worksheetnew.write(linha +1, 1, valor)
 
-
     #-------salvar a data------
-    workbook.save(path+'/'+dict_paciente['Nome']+'.xls')
+    workbook.save('/Pacients/'+path+'/'+dict_paciente['Nome']+'.xls')
+
+def getID():
+    IDpaciente = open('ID.txt', mode='r+')
+    number = int(IDpaciente.read())
+    number += 1
+    IDpaciente.seek(0)
+    IDpaciente.write(str(number))
+    IDpaciente.close()
+
+    return str(number)
 
 # openXLS(path):
 #    workbook = xlrd.open_workbook(path)
@@ -122,4 +131,4 @@ def importXlS(dict_paciente, APs, MLs, path):
 
 
 #if __name__ =="__main__":
- #   importXlS()
+#    print(getID())

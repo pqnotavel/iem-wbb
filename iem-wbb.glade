@@ -282,7 +282,7 @@
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">CPF:</property>
+                                <property name="label" translatable="yes">ID:</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -376,9 +376,11 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkEntry" id="CPF_entry">
+                              <object class="GtkEntry" id="ID_entry">
                                 <property name="visible">True</property>
+                                <property name="sensitive">False</property>
                                 <property name="can_focus">True</property>
+                                <property name="editable">False</property>
                                 <property name="completion">entrycompletion1</property>
                                 <property name="input_purpose">digits</property>
                               </object>
@@ -389,10 +391,14 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkEntry" id="sex_entry">
+                              <object class="GtkComboBoxText" id="sex_combobox">
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="input_purpose">alpha</property>
+                                <property name="can_focus">False</property>
+                                <items>
+                                  <item id="&lt;Digite ID&gt;" translatable="yes">M</item>
+                                  <item translatable="yes">F</item>
+                                  <item translatable="yes">Outro</item>
+                                </items>
                               </object>
                               <packing>
                                 <property name="expand">False</property>

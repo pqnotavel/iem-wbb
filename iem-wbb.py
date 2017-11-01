@@ -249,7 +249,7 @@ class Iem_wbb:
         print (MAC)
 
         wiimote = conect.connectToWBB(MAC)
-        wiimote.status['battery']
+        #wiimote.status['battery']
         self.progressbar.set_visible(True)
         self.battery_levelbar1.set_visible(True)
         self.batterylabel.set_visible(True)
@@ -270,8 +270,9 @@ class Iem_wbb:
         global pacient
 
         name = self.name_entry.get_text()
-        CPF = self.CPF_entry.get_text()
-        sex = self.sex_entry.get_text()
+        ID = manArq.getID()
+        self.ID_entry.set_text(ID)
+        sex = self.sex_combobox.get_active_text()
         age = self.age_entry.get_text()
         height = self.height_entry.get_text()
 
@@ -279,10 +280,6 @@ class Iem_wbb:
             self.messagedialog1.format_secondary_text("Nome inválido, tente novamente.")
             self.messagedialog1.show()
             self.name_entry.grab_focus()
-        elif(CPF == ""):
-            self.messagedialog1.format_secondary_text("CPF inválido, tente novamente.")
-            self.messagedialog1.show()
-            self.CPF_entry.grab_focus()
         elif(sex == ""):
             self.messagedialog1.format_secondary_text("Sexo inválido, tente novamente.")
             self.messagedialog1.show()
@@ -295,26 +292,28 @@ class Iem_wbb:
             self.messagedialog1.format_secondary_text("Altura inválida, tente novamente.")
             self.messagedialog1.show()
             self.height_entry.grab_focus()
-        elif(not(manArq.makeDir(CPF))):
+        elif not(manArq.makeDir(ID + ' - ' + name)):
             self.messagedialog1.format_secondary_text("O paciente já existe!")
             self.messagedialog1.show()
-            self.CPF_entry.grab_focus()
+            self.ID_entry.grab_focus()
         else:
             height = height.replace(',', '.', 1)
             print("Paciente salvo")
-            pacient = {'Nome': name, 'CPF': CPF, 'Sexo': sex, 'Idade': age, 'Altura': height}
+            pacient = {'Nome': name, 'ID': ID, 'Sexo': sex, 'Idade': age, 'Altura': height}
             self.savepacient_button.set_sensitive(False)
             self.name_entry.set_editable(False)
-            self.sex_entry.set_editable(False)
+            #self.sex_entry.set_editable(False)
             self.age_entry.set_editable(False)
             self.height_entry.set_editable(False)
             self.height_entry.set_text(height)
-            self.CPF_entry.set_editable(False)
+            self.ID_entry.set_editable(False)
             self.name_entry.set_sensitive(False)
-            self.sex_entry.set_sensitive(False)
+            self.sex_combobox.set_sensitive(False)
+            #self.sex_entry.set_sensitive(False)
             self.age_entry.set_sensitive(False)
             self.height_entry.set_sensitive(False)
-            self.CPF_entry.set_sensitive(False)
+            self.ID_entry.set_sensitive(False)
+            print(sex)
 
     def on_capture_button_clicked(self, widget):
         self.standupwindow1.show()
@@ -351,7 +350,7 @@ class Iem_wbb:
 
         self.axis.set_xlim(-max_absoluto_ML, max_absoluto_ML)
         self.axis.set_ylim(-max_absoluto_AP, max_absoluto_AP)
-        self.axis.plot(MLs, APs,'-',color='r')
+        self.axis.plot(MLs, APs,'-.',color='r')
         self.canvas.draw()
         #plt.savefig(pacient['Nome'] + '/grafico original.png', dpi=500)
 
@@ -401,7 +400,7 @@ class Iem_wbb:
         self.axis2.set_xlim(-max_absoluto_ML, max_absoluto_ML)
         self.axis2.set_ylim(-max_absoluto_AP, max_absoluto_AP)
 
-        self.axis2.plot(MLs, APs,'-',color='g')
+        self.axis2.plot(MLs, APs,'-.',color='g')
         self.axis2.set_ylabel('AP')
         self.axis2.set_xlabel('ML')
         self.canvas2.draw()
@@ -415,9 +414,9 @@ class Iem_wbb:
     def on_save_exam_button_clicked(self, widget):
         global pacient
 
-        self.fig.canvas.print_png(pacient['CPF'] + '/grafico original')
-        self.fig2.canvas.print_png(pacient['CPF'] + '/grafico processado')
-        manArq.importXlS(pacient, APs, MLs, pacient['CPF'])
+        self.fig.canvas.print_png(pacient['ID'] + '/grafico original')
+        self.fig2.canvas.print_png(pacient['ID'] + '/grafico processado')
+        manArq.importXlS(pacient, APs, MLs, pacient['ID'])
 
     def __init__(self):
         global dev_names, dev_macs
@@ -480,8 +479,8 @@ class Iem_wbb:
         self.name_entry = go("name_entry")
         self.age_entry = go("age_entry")
         self.height_entry = go("height_entry")
-        self.CPF_entry = go("CPF_entry")
-        self.sex_entry = go("sex_entry")
+        self.ID_entry = go("ID_entry")
+        #self.sex_entry = go("sex_entry")
         self.weight = go("weight")
         self.imc = go("imc")
         self.device_name_in_search = go("device_name_in_search")
@@ -504,6 +503,7 @@ class Iem_wbb:
 
         #Combo-boxes
         self.combo_box_in_saved = go("combo_box_in_saved")
+        self.sex_combobox = go("sex_combobox")
 
         #Liststores
         self.liststore_devices = go("liststore_devices")
