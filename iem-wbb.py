@@ -3,27 +3,25 @@
 
 #import sys
 #import cwiid
+#from numpy import arange, pi, random, linspace
+#import os
+#import time as ptime
+#from math import sqrt
+#import matplotlib.pyplot as plt
+#import pylab as py
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
 
-#from numpy import arange, pi, random, linspace
-#import os
-#import time as ptime
-#from math import sqrt
-#import matplotlib.pyplot as plt
 import calculos as calc
 import conexao as conect
 import ManipularArquivo as manArq
-import _thread
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_gtk3cairo import FigureCanvasGTK3Cairo as FigureCanvas
 from matplotlib.backends.backend_gtk3 import NavigationToolbar2GTK3 as NavigationToolbar
-
-#import pylab as py
 
 APs = []
 MLs = []
@@ -35,7 +33,6 @@ dev_macs = []
 global wiimote, battery, child, relative, nt, plotTitle
 
 class Iem_wbb:
-    global pacient
 
     def on_window1_destroy(self, object, data=None):
         print("Quit with cancel")
@@ -97,10 +94,12 @@ class Iem_wbb:
 
     def close_standupwindow1(self, arg1, arg2):
         self.standupwindow1.hide()
+        self.window.get_focus()
         return True
 
     def close_searchdevicewindow1(self, arg1, arg2):
         self.searchdevicewindow1.hide()
+        self.window.get_focus()
         return True
 
     def close_newdevicewindow1(self, arg1, arg2):
@@ -140,7 +139,7 @@ class Iem_wbb:
             self.device_name_in_new.set_text("")
             self.device_mac_in_new.set_text("")
             self.newdevicewindow1.hide()
-
+            self.window.get_focus()
             self.liststore_devices.clear()
             dev_names, dev_macs = manArq.openWBBs()
             for i in range(len(dev_names)):
@@ -151,19 +150,17 @@ class Iem_wbb:
         self.saveddeviceswindow1.hide()
 
     def on_start_search_button_clicked(self, widget):
-        global wiimote
+        global wiimote, battery
 
         self.image_statusbar1.set_from_file("red.png")
         self.label_statusbar1.set_text("Não conectado")
 
         print("Buscando novo dispositivo")
 
-        wiimote = conect.searchWBB(self)
+        wiimote, battery = conect.searchWBB()
 
-        self.progressbar.set_visible(True)
-        self.battery_levelbar1.set_visible(True)
+        self.batterylabel.set_text("Bateria: " + str(int(100*battery))+"%")
         self.batterylabel.set_visible(True)
-        self.battery_percent_label.set_visible(True)
         
         self.image_statusbar1.set_from_file("green.png")
         self.label_statusbar1.set_text("Conectado")
@@ -171,6 +168,26 @@ class Iem_wbb:
         self.save_device_in_search.set_sensitive(True)
         self.device_name_in_search.set_sensitive(True)
         self.capture_button.set_sensitive(True)
+
+    def on_connect_in_saved_clicked(self, widget):
+        global wiimote, battery
+
+        self.image_statusbar1.set_from_file("red.png")
+        self.label_statusbar1.set_text("Não conectado")
+
+        MAC = self.mac_entry_in_saved.get_text()
+        print (MAC)
+
+        wiimote, battery = conect.connectToWBB(MAC)
+
+        self.batterylabel.set_text("Bateria: " + str(int(100*battery))+"%")
+        self.batterylabel.set_visible(True)
+
+        self.image_statusbar1.set_from_file("green.png")
+        self.label_statusbar1.set_text("Conectado")
+        self.capture_button.set_sensitive(True)
+        self.saveddeviceswindow1.hide()
+        self.window.get_focus()
 
     def on_cancel_button_clicked(self, widget):
         print("Adição de dispositivo cancelada")
@@ -228,37 +245,15 @@ class Iem_wbb:
             self.boxAdvanced.pack_start(nt, expand=False, fill=True, padding=0)
             self.advancedgraphswindow.show()
 
-    def on_advancedwindow_button_clicked(self, widget):
-        pass
-
     def on_save_device_in_search_clicked(self, widget):
         self.spinner_in_search.stop()
         self.searchdevicewindow1.hide()
+        self.window.get_focus()
 
     def on_cancel_in_search_clicked(self, widget):
         self.spinner_in_search.stop()
         self.searchdevicewindow1.hide()
-
-    def on_connect_in_saved_clicked(self, widget):
-        global wiimote, battery
-
-        self.image_statusbar1.set_from_file("red.png")
-        self.label_statusbar1.set_text("Não conectado")
-
-        MAC = self.mac_entry_in_saved.get_text()
-        print (MAC)
-
-        wiimote = conect.connectToWBB(MAC)
-        #wiimote.status['battery']
-        self.progressbar.set_visible(True)
-        self.battery_levelbar1.set_visible(True)
-        self.batterylabel.set_visible(True)
-        self.battery_percent_label.set_visible(True)
-
-        self.image_statusbar1.set_from_file("green.png")
-        self.label_statusbar1.set_text("Conectado")
-        self.capture_button.set_sensitive(True)
-        self.saveddeviceswindow1.hide()
+        self.window.get_focus()
 
     def on_cancel_in_standup_clicked(self, widget):
         self.standupwindow1.hide()
@@ -270,8 +265,6 @@ class Iem_wbb:
         global pacient
 
         name = self.name_entry.get_text()
-        ID = manArq.getID()
-        self.ID_entry.set_text(ID)
         sex = self.sex_combobox.get_active_text()
         age = self.age_entry.get_text()
         height = self.height_entry.get_text()
@@ -292,11 +285,10 @@ class Iem_wbb:
             self.messagedialog1.format_secondary_text("Altura inválida, tente novamente.")
             self.messagedialog1.show()
             self.height_entry.grab_focus()
-        elif not(manArq.makeDir(ID + ' - ' + name)):
-            self.messagedialog1.format_secondary_text("O paciente já existe!")
-            self.messagedialog1.show()
-            self.ID_entry.grab_focus()
         else:
+            ID = manArq.getID()
+            self.ID_entry.set_text(ID)
+            manArq.makeDir(ID + ' - ' + name)
             height = height.replace(',', '.', 1)
             print("Paciente salvo")
             pacient = {'Nome': name, 'ID': ID, 'Sexo': sex, 'Idade': age, 'Altura': height}
@@ -313,9 +305,9 @@ class Iem_wbb:
             self.age_entry.set_sensitive(False)
             self.height_entry.set_sensitive(False)
             self.ID_entry.set_sensitive(False)
-            print(sex)
 
     def on_capture_button_clicked(self, widget):
+        self.progressbar1.set_fraction(0)
         self.standupwindow1.show()
 
     def on_start_capture_button_clicked(self, widget):
@@ -352,7 +344,6 @@ class Iem_wbb:
         self.axis.set_ylim(-max_absoluto_AP, max_absoluto_AP)
         self.axis.plot(MLs, APs,'-.',color='r')
         self.canvas.draw()
-        #plt.savefig(pacient['Nome'] + '/grafico original.png', dpi=500)
 
         APs, MLs = calc.geraAP_ML(APs, MLs)
 
@@ -408,15 +399,15 @@ class Iem_wbb:
         self.weight.set_max_length(6)
         self.imc.set_text(str(imc))
         self.imc.set_max_length(5)
-        #plt.savefig(pacient['Nome'] + '/grafico processado.png', dpi=500)
         self.save_exam_button.set_sensitive(True)
 
     def on_save_exam_button_clicked(self, widget):
         global pacient
-
-        self.fig.canvas.print_png(pacient['ID'] + '/grafico original')
-        self.fig2.canvas.print_png(pacient['ID'] + '/grafico processado')
-        manArq.importXlS(pacient, APs, MLs, pacient['ID'])
+        path = 'Pacients/' + pacient['ID']+ ' - ' + pacient['Nome']
+        self.fig.canvas.print_png(str(path + '/grafico original'))
+        self.fig2.canvas.print_png(str(path + '/grafico processado'))
+        manArq.importXlS(pacient, APs, MLs, path)
+        print("Exame Salvo")
 
     def __init__(self):
         global dev_names, dev_macs
@@ -429,14 +420,13 @@ class Iem_wbb:
 
         #Boxes
         self.vbox1 = go("vbox1")
+        self.boxOriginal = go("boxOriginal")
+        self.boxProcessado = go("boxProcessado")
         self.boxFourier = go("boxFourier")
         self.boxAdvanced = go("boxAdvanced")
 
         #Windows
         self.window = go("window1")
-        self.boxOriginal = go("boxOriginal")
-        self.boxProcessado = go("boxProcessado")
-        #self.scrolledwindow3 = go("scrolledwindow3")
         self.newdevicewindow1 = go("newdevicewindow1")
         self.messagedialog1 = go("messagedialog1")
         self.standupwindow1 = go("standupwindow1")
@@ -472,7 +462,6 @@ class Iem_wbb:
         #Labels
         self.label_statusbar1 = go("label_statusbar1")
         self.batterylabel = go("batterylabel")
-        self.battery_percent_label = go("battery_percent_label")
         self.instructionslabel_in_saved = go("instructionslabel_in_saved")
 
         #Entrys
@@ -516,10 +505,7 @@ class Iem_wbb:
         self.combo_box_in_saved.connect("changed", self.combo_box_in_saved_changed)
 
         #Bars
-        self.battery_levelbar1 = go("battery_levelbar1")
-        self.battery_levelbar1.set_value(0.88)
-        self.battery_percent_label.set_text(str(int(100*float(self.battery_levelbar1.get_value())))+"%")
-        self.progressbar = go("progressbar")
+        self.progressbar1 = go("progressbar1")
 
         #Plots
         '''Original Graph'''
@@ -531,7 +517,6 @@ class Iem_wbb:
         self.axis.set_xlabel('ML', fontsize = 16)
         self.canvas = FigureCanvas(self.fig)
         self.boxOriginal.pack_start(self.canvas, expand=True, fill=True, padding=0)
-        #self.scrolledwindow1.add_with_viewport(self.canvas)
 
         '''Processed Graph'''
         self.fig2 = Figure(dpi=50)
@@ -542,15 +527,8 @@ class Iem_wbb:
         self.axis2.set_xlabel('ML', fontsize = 16)
         self.canvas2 = FigureCanvas(self.fig2)
         self.boxProcessado.pack_start(self.canvas2, expand=True, fill=True, padding=0)
-        #self.scrolledwindow2.add_with_viewport(self.canvas2)
 
         '''Frequency Graph'''
-        '''self.fig3 = plt.figure()
-
-        self.axis3 = self.fig3.add_subplot(111)
-        self.canvas3 = FigureCanvas(self.fig3)
-        self.scrolledwindow3.add_with_viewport(self.canvas3)'''
-
         self.fig3 = Figure(dpi=50)
         self.fig3.suptitle('Transformada de Fourier', fontsize=20)
         self.axis3 = self.fig3.add_subplot(111)
@@ -558,15 +536,8 @@ class Iem_wbb:
         self.axis3.set_xlabel('ML', fontsize = 16)
         self.canvas3 = FigureCanvas(self.fig3)
         self.boxFourier.pack_start(self.canvas3, expand=True, fill=True, padding=0)
-        #self.nt = NavigationToolbar(self.canvas3, self.window)
-        #self.boxFourier.pack_start(self.nt, expand=False, fill=True, padding=10)
-
 
         self.window.show_all()
-        self.progressbar.set_visible(False)
-        self.battery_levelbar1.set_visible(False)
-        self.batterylabel.set_visible(False)
-        self.battery_percent_label.set_visible(False)
 
 if __name__ == "__main__":
     main = Iem_wbb()

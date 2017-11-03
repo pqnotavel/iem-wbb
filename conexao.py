@@ -5,7 +5,7 @@ import os
 import time as ptime
 import calculos as calc
 
-def searchWBB(self):
+def searchWBB():
 
     wiimote = cwiid.Wiimote()
     wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
@@ -33,6 +33,11 @@ def searchWBB(self):
     #    i+=1
 
 
+    battery = wiimote.state['battery']/cwiid.BATTERY_MAX
+
+    return wiimote, battery
+
+
 
 def connectToWBB(MAC):
 
@@ -54,9 +59,14 @@ def connectToWBB(MAC):
             print ("attempt " + str(i))
             i +=1
 
-    return wiimote
+    #print(wiimote.get_mesg())
 
-def readWBB(self):
+    battery = wiimote.state['battery']/cwiid.BATTERY_MAX
+
+    return wiimote, battery
+
+
+"""def readWBB(self):
 
     print("Please press the red 'connect' button on the balance board, inside the battery compartment.")
     print("Do not step on the balance board.")
@@ -163,7 +173,7 @@ def readWBB(self):
     #wiimote.close()
     #print(wiimote.__getattribute__())
     print(wiimote.request_status())
-    return balance_dif, weights, i
+    return balance_dif, weights, i"""
 
 def closeConection(wiimote):
     wiimote.close()
