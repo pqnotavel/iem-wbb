@@ -9,10 +9,15 @@ from datetime import datetime
 
 #cria diretorio, com o nome dos pacientes, onde será guardados seus respectivos arquivos
 def makeDir(path):
-    if os.path.isdir(path):
+    if os.path.isdir('./Pacients/'+path):
         return False
     os.mkdir('./Pacients/'+path)
     return True
+
+def renameDir(pathOld, pathNew):
+    #if not os.path.isdir('.Pacients/'+pathOld):
+    #    return False
+    os.rename('./Pacients/'+pathOld, './Pacients/'+pathNew)
 
 def saveWBB(dict_WBB):
     #Lendo arquivo

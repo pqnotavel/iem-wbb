@@ -23,6 +23,8 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_gtk3cairo import FigureCanvasGTK3Cairo as FigureCanvas
 from matplotlib.backends.backend_gtk3 import NavigationToolbar2GTK3 as NavigationToolbar
 
+import psycopg2
+
 APs = []
 MLs = []
 pacient = {}
@@ -30,16 +32,20 @@ WBB = {}
 dev_names = []
 dev_macs = []
 
-global wiimote, battery, child, relative, nt, plotTitle
+global wiimote, battery, child, relative, nt, plotTitle, conn, cur, modifying
 
 class Iem_wbb:
 
     def on_window1_destroy(self, object, data=None):
         print("Quit with cancel")
+        cur.close()
+        conn.close()
         Gtk.main_quit()
 
     def on_gtk_quit_activate(self, menuitem, data=None):
         print("Quit from menu")
+        cur.close()
+        conn.close()
         Gtk.main_quit()
 
     #Destroy and rebuild all
@@ -262,7 +268,7 @@ class Iem_wbb:
         self.messagedialog1.hide()
 
     def on_savepacient_button_clicked(self, widget):
-        global pacient
+        global pacient, cur, conn, modifying
 
         name = self.name_entry.get_text()
         sex = self.sex_combobox.get_active_text()
@@ -276,7 +282,7 @@ class Iem_wbb:
         elif(sex == ""):
             self.messagedialog1.format_secondary_text("Sexo inválido, tente novamente.")
             self.messagedialog1.show()
-            self.sex_entry.grab_focus()
+            self.sex_combobox.grab_focus()
         elif(age == ""):
             self.messagedialog1.format_secondary_text("Idade inválida, tente novamente.")
             self.messagedialog1.show()
@@ -286,25 +292,59 @@ class Iem_wbb:
             self.messagedialog1.show()
             self.height_entry.grab_focus()
         else:
-            ID = manArq.getID()
-            self.ID_entry.set_text(ID)
-            manArq.makeDir(ID + ' - ' + name)
             height = height.replace(',', '.', 1)
-            print("Paciente salvo")
-            pacient = {'Nome': name, 'ID': ID, 'Sexo': sex, 'Idade': age, 'Altura': height}
             self.savepacient_button.set_sensitive(False)
             self.name_entry.set_editable(False)
-            #self.sex_entry.set_editable(False)
             self.age_entry.set_editable(False)
             self.height_entry.set_editable(False)
             self.height_entry.set_text(height)
             self.ID_entry.set_editable(False)
             self.name_entry.set_sensitive(False)
             self.sex_combobox.set_sensitive(False)
-            #self.sex_entry.set_sensitive(False)
             self.age_entry.set_sensitive(False)
             self.height_entry.set_sensitive(False)
             self.ID_entry.set_sensitive(False)
+            if not modifying:
+                cur.execute("INSERT INTO pacients (name, sex, age, height) VALUES (%s, %s, %s, %s)",(name, sex, age, height))
+                conn.commit()
+                cur.execute("SELECT * FROM pacients;")
+                rows = cur.fetchall()
+                print ("\nShow me the databases:\n")
+                for row in rows:
+                    print (row)
+                cur.execute("SELECT * FROM pacients_id_seq;")
+                row = cur.fetchall()
+                ID = row[0][1]
+                pacient = {'Nome': name, 'ID': ID, 'Sexo': sex, 'Idade': age, 'Altura': height}
+                self.ID_entry.set_text(str(ID))
+                manArq.makeDir(str(ID) + ' - ' + name)
+            else:
+                pathOld = str(pacient['ID']) + ' - ' + pacient['Nome']
+                pathNew = str(pacient['ID']) + ' - ' + name
+                manArq.renameDir(pathOld, pathNew)
+                cur.execute("UPDATE pacients SET sex = (%s), age = (%s), height = (%s), name = (%s) WHERE id = (%s);", (sex, age, height, name, pacient['ID']))
+                conn.commit()
+                pacient['Nome'] = name
+                pacient['Sexo'] = sex
+                pacient['Idade'] = age
+                pacient['Altura'] = height
+            print("Paciente salvo")
+            self.changepacientbutton.set_sensitive(True)
+
+    def on_changepacientbutton_clicked(self, widget):
+        global modifying
+        modifying = True
+        self.savepacient_button.set_sensitive(True)
+        self.name_entry.set_editable(True)
+        self.age_entry.set_editable(True)
+        self.height_entry.set_editable(True)
+        self.ID_entry.set_editable(True)
+        self.name_entry.set_sensitive(True)
+        self.sex_combobox.set_sensitive(True)
+        self.age_entry.set_sensitive(True)
+        self.height_entry.set_sensitive(True)
+        self.changepacientbutton.set_sensitive(False)
+
 
     def on_capture_button_clicked(self, widget):
         self.progressbar1.set_fraction(0)
@@ -312,8 +352,9 @@ class Iem_wbb:
 
     def on_start_capture_button_clicked(self, widget):
         self.standupwindow1.hide()
+        self.progressbar1.set_visible(True)
 
-        global APs, MLs, pacient, wiimote, dev_macs, dev_names
+        global APs, MLs, pacient, wiimote, dev_macs, dev_names, cur, conn
 
         balance, weights, pontos = calc.calcPontos(self, wiimote)
         midWeight = calc.calcPesoMedio(weights)
@@ -321,8 +362,13 @@ class Iem_wbb:
 
         self.points_entry.set_text(str(pontos))
 
-        pacient['Peso'] = midWeight
-        pacient['IMC'] = imc
+        pacient['Peso'] = round(midWeight, 2)
+        pacient['IMC'] = round(imc,1)
+
+        cur.execute("UPDATE pacients SET weight = (%s), imc = (%s) WHERE name = (%s);", (pacient['Peso'], pacient['IMC'], pacient['Nome']))
+        conn.commit()
+        cur.execute("SELECT * FROM pacients;")
+        print(cur.fetchall())
 
         for (x,y) in balance:
             APs.append(x)
@@ -402,15 +448,19 @@ class Iem_wbb:
         self.save_exam_button.set_sensitive(True)
 
     def on_save_exam_button_clicked(self, widget):
-        global pacient
-        path = 'Pacients/' + pacient['ID']+ ' - ' + pacient['Nome']
+        global pacient, APs, MLs, cur, conn
+        cur.execute("INSERT INTO exams (APs, MLs, pac_id) VALUES (%s, %s, %s)", (APs, MLs, pacient['ID']))
+        conn.commit()
+        path = 'Pacients/' + str(pacient['ID']) + ' - ' + pacient['Nome']
         self.fig.canvas.print_png(str(path + '/grafico original'))
         self.fig2.canvas.print_png(str(path + '/grafico processado'))
         manArq.importXlS(pacient, APs, MLs, path)
         print("Exame Salvo")
 
     def __init__(self):
-        global dev_names, dev_macs
+        global dev_names, dev_macs, modifying
+
+        modifying = False
 
         self.gladeFile = "iem-wbb.glade"
         self.builder = Gtk.Builder()
@@ -451,6 +501,7 @@ class Iem_wbb:
         #Buttons
         self.capture_button = go("capture_button")
         self.savepacient_button = go("savepacient_button")
+        self.changepacientbutton = go("changepacientbutton")
         self.start_capture_button = go("start_capture_button")
         self.save_device_in_search = go("save_device_in_search")
         self.connect_in_saved = go("connect_in_saved")
@@ -538,7 +589,23 @@ class Iem_wbb:
         self.boxFourier.pack_start(self.canvas3, expand=True, fill=True, padding=0)
 
         self.window.show_all()
+        self.progressbar1.set_visible(False)
+
 
 if __name__ == "__main__":
+    global conn, cur
+
+    '''Conecting to DB'''
+    conn = psycopg2.connect("dbname=iem_wbb host=localhost user=postgres password=123")
+    '''Abrindo um cursor para manipular o banco'''
+    cur = conn.cursor()
+    '''Criando a tabela de pacientes'''
+    #try:
+    #    cur.execute("CREATE TABLE pacients(id serial PRIMARY KEY, name text, sex char(5), age smallint, height numeric(3,2), weight numeric(5,2), imc numeric(3,1));")
+    #    cur.execute("CREATE TABLE exams(id SERIAL PRIMARY KEY, APs NUMERIC(16,15)[], MLs NUMERIC(16,15)[], date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), pac_id INT REFERENCES pacients(id));")
+    #    cur.execute("CREATE TABLE devices(id SERIAL PRIMARY KEY,name VARCHAR(50),mac VARCHAR(17));")
+    #except:
+    #       print("Can't create table. Maybe it already exists.")
+    
     main = Iem_wbb()
     Gtk.main()
