@@ -56,16 +56,57 @@ def loadPacient(self, dict_paciente, path):
     return
 
 def savePacient(dict_paciente, path):
-    lin, col = (0, 0)
     workbook = xlwt.Workbook()
     worksheet = workbook.add_sheet(u'Dados do Paciente')
 
-    for x in dict_paciente:
-        worksheet.write(lin, col,u''+str(x))
-        worksheet.write(lin, col +1, dict_paciente[x])
-        lin+=1
+    worksheet.write(0, 0,u'Nome')
+    worksheet.write(0, 1, dict_paciente['Nome'])
+    worksheet.write(1, 0,u'Sexo')
+    worksheet.write(1, 1, dict_paciente['Sexo'])
+    worksheet.write(2, 0,u'Idade')
+    worksheet.write(2, 1, dict_paciente['Idade'])
+    worksheet.write(3, 0,u'Altura')
+    worksheet.write(3, 1, dict_paciente['Altura'])
 
-    workbook.save(path + '/teste.xls')
+    workbook.save('Pacients/'+path+'/'+dict_paciente['Nome']+'.xls')
+
+def saveExam(dict_paciente, APs, MLs, path):
+    #Lendo arquivo
+    workbook_read = xlrd.open_workbook(path+'/'+dict_paciente['Nome']+'.xls', formatting_info = True)
+
+    #Copiando arquivo
+    workbook_write = copy(workbook_read)
+    worksheet_write = workbook_write.get_sheet(0)
+
+    worksheet_write.write(4, 0,u'Peso')
+    worksheet_write.write(4, 1, dict_paciente['Peso'])
+    worksheet_write.write(5, 0,u'IMC')
+    worksheet_write.write(5, 1, dict_paciente['IMC'])
+
+    #Extraindo Data e Hora
+    td = datetime.now()
+    td = str(td)
+    td = td.replace(':', 'h', 1)
+    td = td.replace(':', 'm', 1)
+    td = td+'s'
+
+    #Criando nova planilha
+    worksheetnew = workbook_write.add_sheet(u''+str(td))
+
+    #salvando os resultados de ap e ml
+    worksheetnew.write(0, 0, u'APs')
+    worksheetnew.write(0, 1, u'MLs')
+
+    #salvando os valores de APs
+    for linha, valor in enumerate(APs):
+        worksheetnew.write(linha +1, 0, valor)
+
+    #salvando os valores de MLs
+    for linha, valor in enumerate(MLs):
+        worksheetnew.write(linha +1, 1, valor)
+
+    #Salvando Arquivo editado
+    workbook_write.save(path+'/'+dict_paciente['Nome']+'.xls')
 
 def importXlS(dict_paciente, APs, MLs, path):
 
