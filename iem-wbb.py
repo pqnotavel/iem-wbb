@@ -38,14 +38,14 @@ class Iem_wbb:
 
     def on_window1_destroy(self, object, data=None):
         print("Quit with cancel")
-        #cur.close()
-        #conn.close()
+        cur.close()
+        conn.close()
         Gtk.main_quit()
 
     def on_gtk_quit_activate(self, menuitem, data=None):
         print("Quit from menu")
-        #cur.close()
-        #conn.close()
+        cur.close()
+        conn.close()
         Gtk.main_quit()
 
     #Destroy and rebuild all
@@ -309,16 +309,16 @@ class Iem_wbb:
             self.height_entry.set_sensitive(False)
             self.ID_entry.set_sensitive(False)
             if not modifying:
-                #cur.execute("INSERT INTO pacients (name, sex, age, height) VALUES (%s, %s, %s, %s)",(name, sex, age, height))
-                #conn.commit()
-                #ur.execute("SELECT * FROM pacients;")
-                #rows = cur.fetchall()
-                #rint ("\nShow me the databases:\n")
-                #for row in rows:
-                #    print (row)
-                #cur.execute("SELECT * FROM pacients_id_seq;")
-                #row = cur.fetchall()
-                ID = manArq.getID()
+                cur.execute("INSERT INTO pacients (name, sex, age, height) VALUES (%s, %s, %s, %s)",(name, sex, age, height))
+                conn.commit()
+                cur.execute("SELECT * FROM pacients;")
+                rows = cur.fetchall()
+                print ("\nShow me the databases:\n")
+                for row in rows:
+                    print (row)
+                cur.execute("SELECT * FROM pacients_id_seq;")
+                row = cur.fetchall()
+                ID = row[0][1]
                 pacient = {'Nome': name, 'ID': ID, 'Sexo': sex, 'Idade': age, 'Altura': height}
                 self.ID_entry.set_text(str(ID))
                 manArq.makeDir(str(ID) + ' - ' + name)
@@ -331,9 +331,9 @@ class Iem_wbb:
                 pathOld = pathNew + '/' + pacient['Nome'] + ".xls"
                 pathNew = str(pacient['ID']) + ' - ' + name + '/' + name + ".xls"
                 manArq.renameDir(pathOld, pathNew)
-                #cur.execute("UPDATE pacients SET sex = (%s), age = (%s), height = (%s), name = (%s) WHERE id = (%s);", (sex, age, height, name, pacient['ID']))
-                #conn.commit()
-                pacient['Nome'] = name
+                cur.execute("UPDATE pacients SET sex = (%s), age = (%s), height = (%s), name = (%s) WHERE id = (%s);", (sex, age, height, name, pacient['ID']))
+                conn.commit()
+                pacient['Nome'] = nam
                 pacient['Sexo'] = sex
                 pacient['Idade'] = age
                 pacient['Altura'] = height
@@ -374,10 +374,8 @@ class Iem_wbb:
         pacient['Peso'] = round(midWeight, 2)
         pacient['IMC'] = round(imc,1)
 
-        #cur.execute("UPDATE pacients SET weight = (%s), imc = (%s) WHERE name = (%s);", (pacient['Peso'], pacient['IMC'], pacient['Nome']))
-        #conn.commit()
-        #cur.execute("SELECT * FROM pacients;")
-        #print(cur.fetchall())
+        cur.execute("UPDATE pacients SET weight = (%s), imc = (%s) WHERE name = (%s);", (pacient['Peso'], pacient['IMC'], pacient['Nome']))
+        conn.commit()
 
         for (x,y) in balance:
             APs.append(x)
@@ -458,8 +456,8 @@ class Iem_wbb:
 
     def on_save_exam_button_clicked(self, widget):
         global pacient, APs, MLs, cur, conn
-        #cur.execute("INSERT INTO exams (APs, MLs, pac_id) VALUES (%s, %s, %s)", (APs, MLs, pacient['ID']))
-        #conn.commit()
+        cur.execute("INSERT INTO exams (APs, MLs, pac_id) VALUES (%s, %s, %s)", (APs, MLs, pacient['ID']))
+        conn.commit()
         path = 'Pacients/' + str(pacient['ID']) + ' - ' + pacient['Nome']
         self.fig.canvas.print_png(str(path + '/grafico original'))
         self.fig2.canvas.print_png(str(path + '/grafico processado'))
@@ -605,9 +603,9 @@ if __name__ == "__main__":
     global conn, cur
 
     '''Conecting to DB'''
-    #conn = psycopg2.connect("dbname=iem_wbb host=localhost user=postgres password=123")
+    conn = psycopg2.connect("dbname=iem_wbb host=localhost user=postgres password=123")
     '''Abrindo um cursor para manipular o banco'''
-    #cur = conn.cursor()
+    cur = conn.cursor()
     '''Criando a tabela de pacientes'''
     #try:
     #    cur.execute("CREATE TABLE pacients(id serial PRIMARY KEY, name text, sex char(5), age smallint, height numeric(3,2), weight numeric(5,2), imc numeric(3,1));")
