@@ -29,8 +29,6 @@ APs = []
 MLs = []
 pacient = {}
 WBB = {}
-dev_names = []
-dev_macs = []
 
 global wiimote, battery, child, relative, nt, plotTitle, conn, cur, modifying
 
@@ -62,33 +60,226 @@ class Iem_wbb:
         self.__init__()
 
     def on_open_activate(self, menuitem, data=None):
+        global cur
+
+        self.pacient_label_in_load.set_text("")
+
+        #Fills the combobox with pacients names
+        self.combobox_in_load_pacient.remove_all()
+        cur.execute("SELECT id, name FROM pacients;")
+        rows = cur.fetchall()
+        for row in rows:
+            self.combobox_in_load_pacient.append(str(row[0]),str(row[0]) + ' - ' + row[1])
+
+        #Shows the window to load a pacient
+        self.load_pacient_window.show()
+
+    #Gets the signal of changing at pacients_combobox
+    def on_combobox_in_load_pacient_changed(self, widget):
+        global cur, pacient
+
+        self.pacient_label_in_load.set_text("")
+
+        #Gets the active row ID at pacients_combobox
+        ID = self.combobox_in_load_pacient.get_active_id()
+        ID = str(ID)
+
+        #Selects the active row from table pacients
+        cur.execute("SELECT * FROM pacients WHERE id = (%s);", (ID))
+        row = cur.fetchall()
+
+        #Fills the pacient with row content
+        name = str(row[0][1])
+        sex = str(row[0][2])
+        sex = sex[0]
+        age = str(row[0][3])
+        height = str(row[0][4])
+        weight = str(row[0][5])
+        imc = str(row[0][6])
+
+        self.pacient_label_in_load.set_text('Nome: ' + name +
+            '\n' + 'Sexo: ' + sex +
+            '\n' + 'Idade: ' + age +
+            '\n' + 'Altura: ' + height +
+            '\n' + 'Peso: ' + weight +
+            '\n' + 'IMC: ' + imc)
+
+        pacient = {'Nome': name, 'ID': ID, 'Sexo': sex, 'Idade': age, 'Altura': height, 'Peso' : weight, 'IMC': imc}
+
+    def on_load_pacient_button_clicked(self, widget):
+        global pacient, cur
+
+        #Clears graphs and label contents
+        self.pacient_label_in_load.set_text("")
+        self.combo_box_set_exam.remove_all()
+        self.axis.clear()
+        self.axis.set_ylabel('AP')
+        self.axis.set_xlabel('MP')
+        self.axis2.clear()
+        self.axis2.set_ylabel('AP')
+        self.axis2.set_xlabel('MP')
+
+        #Fill the main window with pacient data
+        self.ID_entry.set_text(pacient['ID'])
+        self.name_entry.set_text(pacient['Nome'])
+        self.age_entry.set_text(pacient['Idade'])
+        self.height_entry.set_text(pacient['Altura'])
+        if(pacient['Sexo'] == 'M'):
+            self.sex_combobox.set_active_id('0')
+        elif(pacient['Sexo'] == 'F'):
+            self.sex_combobox.set_active_id('1')
+        else:
+            self.sex_combobox.set_active_id('2')
+        self.weight.set_text(pacient['Peso'])
+        self.imc.set_text(pacient['IMC'])
+        self.sex_combobox.set_sensitive(False)
+        self.name_entry.set_sensitive(False)
+        self.age_entry.set_sensitive(False)
+        self.height_entry.set_sensitive(False)
         self.savepacient_button.set_sensitive(False)
-        pass
+        self.changepacientbutton.set_sensitive(True)
+        self.load_pacient_window.hide()
+        self.capture_button.set_sensitive(True)
 
-    #Show saved devices window
-    def on_connect_to_saved_device_activate(self, menuitem, data=None):
-        self.saveddeviceswindow1.show()
+        #Fills the exams_combobox with the dates of current pacient exams
+        cur.execute("SELECT * FROM exams WHERE pac_id = (%s)", (pacient['ID']))
+        rows = cur.fetchall()
+        for row in rows:
+            self.combo_box_set_exam.append(str(row[0]), str(row[0]) + ' - ' + str(row[3]))            
 
-    #Saved devices selection
-    def combo_box_in_saved_changed(self, widget):
-        global dev_macs
+        if(len(rows)):
+            self.combo_box_set_exam.set_sensitive(True)
+            self.load_exam_button.set_sensitive(True)
+        else:
+            self.combo_box_set_exam.set_sensitive(False)
+            self.load_exam_button.set_sensitive(False)
 
-        tree_iter = self.combo_box_in_saved.get_active_iter()
-        if(tree_iter != None):
-            model = self.combo_box_in_saved.get_model()
-            index = model.get_path(tree_iter)[0]
-            self.mac_entry_in_saved.set_text(dev_macs[index])
-            self.connect_in_saved.set_sensitive(True)
-            self.instructionslabel_in_saved.set_sensitive(True)
-            self.instructionslabel_in_saved.set_visible(True)
-            self.image_in_saved.set_sensitive(True)
-            self.image_in_saved.set_visible(True)
-        return True
+    def on_cancel_in_load_button_clicked(self, widget):
+        self.pacient_label_in_load.set_text("")
+        self.load_pacient_window.hide()
 
+    #Gets the signal of changing at exams_combobox
+    def on_combo_box_set_exam_changed(self, widget):
+        global cur, pacient, APs, MLs
+
+        #Gets the active row ID at exams_combobox
+        ID = self.combo_box_set_exam.get_active_id()
+        ID = str(ID)
+
+        #Selects the active row from table exams
+        cur.execute("SELECT aps, mls FROM exams WHERE id = (%s)", (ID))
+        row = cur.fetchall()
+
+        APs = []
+        MLs = []
+
+        for x in row[0][0]:
+            APs.append(float(x))
+        for x in row[0][1]:
+            MLs.append(float(x))
+
+    def on_load_exam_button_clicked(self, widget):
+        global APs, MLs
+
+        max_absoluto_AP = calc.valorAbsoluto(min(APs), max(APs))
+        max_absoluto_ML = calc.valorAbsoluto(min(MLs), max(MLs))
+
+        max_absoluto_AP *= 1.25
+        max_absoluto_ML *= 1.25
+
+        print('max_absoluto_AP:',max_absoluto_AP,'max_absoluto_ML:',max_absoluto_ML)
+
+        self.axis.clear()
+        self.axis.set_ylabel('AP')
+        self.axis.set_xlabel('MP')
+
+        self.axis.set_xlim(-max_absoluto_ML, max_absoluto_ML)
+        self.axis.set_ylim(-max_absoluto_AP, max_absoluto_AP)
+        self.axis.plot(MLs, APs,'-.',color='r')
+        self.canvas.draw()
+
+        APs, MLs = calc.geraAP_ML(APs, MLs)
+
+        dis_resultante_total = calc.distanciaResultante(APs, MLs)
+        dis_resultante_AP = calc.distanciaResultanteParcial(APs)
+        dis_resultante_ML = calc.distanciaResultanteParcial(MLs)
+
+        dis_media = calc.distanciaMedia(dis_resultante_total)
+
+        dis_rms_total = calc.distRMS(dis_resultante_total)
+        dis_rms_AP = calc.distRMS(dis_resultante_AP)
+        dis_rms_ML = calc.distRMS(dis_resultante_ML)
+
+        totex_total = calc.totex(APs, MLs)
+        totex_AP = calc.totexParcial(APs)
+        totex_ML = calc.totexParcial(MLs)
+
+        mvelo_total = calc.mVelo(totex_total, 20)
+        mvelo_AP = calc.mVelo(totex_AP, 20)
+        mvelo_ML =  calc.mVelo(totex_ML, 20)
+
+        self.entry_Mdist.set_text(str(dis_media))
+
+        self.entry_Rdist_TOTAL.set_text(str(dis_rms_total))
+        self.entry_Rdist_AP.set_text(str(dis_rms_AP))
+        self.entry_Rdist_ML.set_text(str(dis_rms_ML))
+
+        self.entry_TOTEX_TOTAL.set_text(str(totex_total))
+        self.entry_TOTEX_AP.set_text(str(totex_AP))
+        self.entry_TOTEX_ML.set_text(str(totex_ML))
+
+        self.entry_MVELO_TOTAL.set_text(str(mvelo_total))
+        self.entry_MVELO_AP.set_text(str(mvelo_AP))
+        self.entry_MVELO_ML.set_text(str(mvelo_ML))
+
+        max_absoluto_AP = calc.valorAbsoluto(min(APs), max(APs))
+        max_absoluto_ML = calc.valorAbsoluto(min(MLs), max(MLs))
+
+        max_absoluto_AP *=1.25
+        max_absoluto_ML *=1.25
+
+        print('max_absoluto_AP:', max_absoluto_AP, 'max_absoluto_ML:', max_absoluto_ML)
+        self.axis2.clear()
+
+        self.axis2.set_xlim(-max_absoluto_ML, max_absoluto_ML)
+        self.axis2.set_ylim(-max_absoluto_AP, max_absoluto_AP)
+
+        self.axis2.plot(MLs, APs,'-.',color='g')
+        self.axis2.set_ylabel('AP')
+        self.axis2.set_xlabel('ML')
+        self.canvas2.draw()
+        
     #Show newdevicewindow1
     def on_new_device_activate(self, menuitem, data=None):
         print("Adicionando novo dispositivo")
         self.newdevicewindow1.show()
+
+    def on_add_button_in_add_device_clicked(self, widget):
+
+        name = self.device_name_in_new.get_text()
+        mac = self.device_mac_in_new.get_text()
+        is_default = self.add_as_default_button_in_add_device.get_active()
+
+        if (name == ""):
+            self.messagedialog1.format_secondary_text("Nome inválido, tente novamente.")
+            self.messagedialog1.show()
+        elif((mac == "") or (len(mac)!=17)):
+            self.messagedialog1.format_secondary_text("MAC inválido, tente novamente.")
+            self.messagedialog1.show()
+        else:
+            WBB = {'Nome':name, 'MAC':mac, 'Padrao' : is_default}
+            manArq.saveWBB(WBB)
+            if(is_default):
+                cur.execute("SELECT * FROM devices_id_seq;")
+                row = cur.fetchall()
+                ID = row[0][1]
+                cur.execute("UPDATE devices SET is_default = FALSE;")
+            cur.execute("INSERT INTO devices (name, mac, is_default) VALUES (%s, %s, %s);", (name, mac, is_default))
+            conn.commit()
+            self.device_name_in_new.set_text("")
+            self.device_mac_in_new.set_text("")
+            self.newdevicewindow1.hide()
+            self.window.get_focus()
 
     #Show searchdevicewindow1
     def on_search_device_activate(self, menuitem, data=None):
@@ -101,6 +292,11 @@ class Iem_wbb:
         conect.closeConection(wiimote)
         self.image_statusbar1.set_from_file("red.png")
         self.label_statusbar1.set_text("Não conectado")
+
+    def close_load_pacient_window(self, arg1, arg2):
+        self.load_pacient_window.hide()
+        self.window.get_focus()
+        return True
 
     def close_standupwindow1(self, arg1, arg2):
         self.standupwindow1.hide()
@@ -128,34 +324,7 @@ class Iem_wbb:
         self.advancedgraphswindow.hide()
         return True
 
-    #Adding new device
-    def on_add_button_clicked(self, widget):
-        global dev_macs, dev_names
-
-        name = self.device_name_in_new.get_text()
-        mac = self.device_mac_in_new.get_text()
-        if (name == ""):
-            self.messagedialog1.format_secondary_text("Nome inválido, tente novamente.")
-            self.messagedialog1.show()
-        elif((mac == "") or (len(mac)!=17)):
-            self.messagedialog1.format_secondary_text("MAC inválido, tente novamente.")
-            self.messagedialog1.show()
-        else:
-            WBB = {'Nome':name, 'MAC':mac}
-            manArq.saveWBB(WBB)
-
-            print("Dispositivo adicionado")
-
-            self.device_name_in_new.set_text("")
-            self.device_mac_in_new.set_text("")
-            self.newdevicewindow1.hide()
-            self.window.get_focus()
-            self.liststore_devices.clear()
-            dev_names, dev_macs = manArq.openWBBs()
-            for i in range(len(dev_names)):
-                 self.liststore_devices.append([dev_names[i]])
-
-    def on_cancel_in_saved_clicked(self, widget):
+    def on_cancel_in_saved_button_clicked(self, widget):
         print("Seleção de dispositivo cancelada")
         self.saveddeviceswindow1.hide()
 
@@ -179,7 +348,38 @@ class Iem_wbb:
         self.device_name_in_search.set_sensitive(True)
         self.capture_button.set_sensitive(True)
 
-    def on_connect_in_saved_clicked(self, widget):
+ 
+    #Show saved devices window
+    def on_connect_to_saved_device_activate(self, menuitem, data=None):
+        global cur
+
+        #Fills the combobox with devices names
+        self.combo_box_in_saved.remove_all()
+        cur.execute("SELECT id, name, is_default FROM devices;")
+        rows = cur.fetchall()
+        for row in rows:
+            self.combo_box_in_saved.append(str(row[0]), row[1])
+            if(row[2]):
+                self.combo_box_in_saved.set_active_id(str(row[0]))
+        self.saveddeviceswindow1.show()
+
+       #Saved devices selection
+    def on_combo_box_in_saved_changed(self, widget):
+        global cur
+
+        #Gets the active row ID at pacients_combobox
+        ID = self.combo_box_in_saved.get_active_id()
+        ID = str(ID)
+
+        #Selects the active row from table devices
+        cur.execute("SELECT mac FROM devices WHERE id = (%s);", (ID))
+        row = cur.fetchall()
+
+        self.mac_entry_in_saved.set_text(row[0][0])
+        self.connect_in_saved_button.set_sensitive(True)
+        self.instructions_on_saved_box.set_visible(True)
+
+    def on_connect_in_saved_button_clicked(self, widget):
         global wiimote, battery
 
         self.image_statusbar1.set_from_file("red.png")
@@ -195,11 +395,13 @@ class Iem_wbb:
 
         self.image_statusbar1.set_from_file("green.png")
         self.label_statusbar1.set_text("Conectado")
+        self.instructions_on_saved_box.set_visible(False)
+        self.connect_in_saved_button.set_sensitive(False)
         self.capture_button.set_sensitive(True)
         self.saveddeviceswindow1.hide()
         self.window.get_focus()
 
-    def on_cancel_button_clicked(self, widget):
+    def on_cancel_button_in_add_device_clicked(self, widget):
         print("Adição de dispositivo cancelada")
         self.newdevicewindow1.hide()
 
@@ -309,7 +511,7 @@ class Iem_wbb:
             self.height_entry.set_sensitive(False)
             self.ID_entry.set_sensitive(False)
             if not modifying:
-                cur.execute("INSERT INTO pacients (name, sex, age, height) VALUES (%s, %s, %s, %s)",(name, sex, age, height))
+                cur.execute("INSERT INTO pacients (name, sex, age, height) VALUES (%s, %s, %s, %s);",(name, sex, age, height))
                 conn.commit()
                 cur.execute("SELECT * FROM pacients;")
                 rows = cur.fetchall()
@@ -333,7 +535,7 @@ class Iem_wbb:
                 manArq.renameDir(pathOld, pathNew)
                 cur.execute("UPDATE pacients SET sex = (%s), age = (%s), height = (%s), name = (%s) WHERE id = (%s);", (sex, age, height, name, pacient['ID']))
                 conn.commit()
-                pacient['Nome'] = nam
+                pacient['Nome'] = name
                 pacient['Sexo'] = sex
                 pacient['Idade'] = age
                 pacient['Altura'] = height
@@ -363,7 +565,7 @@ class Iem_wbb:
         self.standupwindow1.hide()
         self.progressbar1.set_visible(True)
 
-        global APs, MLs, pacient, wiimote, dev_macs, dev_names, cur, conn
+        global APs, MLs, pacient, wiimote, cur, conn
 
         balance, weights, pontos = calc.calcPontos(self, wiimote)
         midWeight = calc.calcPesoMedio(weights)
@@ -377,6 +579,9 @@ class Iem_wbb:
         cur.execute("UPDATE pacients SET weight = (%s), imc = (%s) WHERE name = (%s);", (pacient['Peso'], pacient['IMC'], pacient['Nome']))
         conn.commit()
 
+        APs = []
+        MLs = []
+        
         for (x,y) in balance:
             APs.append(x)
             MLs.append(y)
@@ -463,9 +668,10 @@ class Iem_wbb:
         self.fig2.canvas.print_png(str(path + '/grafico processado'))
         manArq.saveExam(pacient, APs, MLs, path)
         print("Exame Salvo")
+        self.save_exam_button.set_sensitive(False)
 
     def __init__(self):
-        global dev_names, dev_macs, modifying
+        global modifying
 
         modifying = False
 
@@ -481,6 +687,7 @@ class Iem_wbb:
         self.boxProcessado = go("boxProcessado")
         self.boxFourier = go("boxFourier")
         self.boxAdvanced = go("boxAdvanced")
+        self.instructions_on_saved_box = go("instructions_on_saved_box")
 
         #Windows
         self.window = go("window1")
@@ -490,6 +697,7 @@ class Iem_wbb:
         self.searchdevicewindow1 = go("searchdevicewindow1")
         self.saveddeviceswindow1 = go("saveddeviceswindow1")
         self.advancedgraphswindow = go("advancedgraphswindow")
+        self.load_pacient_window = go("load_pacient_window")
 
         #Delete-events
         self.searchdevicewindow1.connect("delete-event", self.close_searchdevicewindow1)
@@ -497,6 +705,7 @@ class Iem_wbb:
         self.standupwindow1.connect("delete-event", self.close_standupwindow1)
         self.saveddeviceswindow1.connect("delete-event", self.close_saveddeviceswindow1)
         self.advancedgraphswindow.connect("delete-event", self.close_advancedgraphswindow)
+        self.load_pacient_window.connect("delete-event", self.close_load_pacient_window)
 
         #Images
         self.image_statusbar1 = go("image_statusbar1")
@@ -505,14 +714,19 @@ class Iem_wbb:
         #Grids
         self.grid_graphs = go("grid_graphs")
 
+        #Separators
+        self.separator_in_saved_devices = go("separator_in_saved_devices")
+
         #Buttons
         self.capture_button = go("capture_button")
         self.savepacient_button = go("savepacient_button")
         self.changepacientbutton = go("changepacientbutton")
         self.start_capture_button = go("start_capture_button")
         self.save_device_in_search = go("save_device_in_search")
-        self.connect_in_saved = go("connect_in_saved")
+        self.connect_in_saved_button = go("connect_in_saved_button")
         self.save_exam_button = go("save_exam_button")
+        self.load_exam_button = go("load_exam_button")
+        self.add_as_default_button_in_add_device = go("add_as_default_button_in_add_device")
 
         #Spinners
         self.spinner_in_search = go("spinner_in_search")
@@ -521,6 +735,7 @@ class Iem_wbb:
         self.label_statusbar1 = go("label_statusbar1")
         self.batterylabel = go("batterylabel")
         self.instructionslabel_in_saved = go("instructionslabel_in_saved")
+        self.pacient_label_in_load = go("pacient_label_in_load")
 
         #Entrys
         self.name_entry = go("name_entry")
@@ -551,16 +766,8 @@ class Iem_wbb:
         #Combo-boxes
         self.combo_box_in_saved = go("combo_box_in_saved")
         self.sex_combobox = go("sex_combobox")
-
-        #Liststores
-        self.liststore_devices = go("liststore_devices")
-        self.liststore_devices.clear()
-        dev_names, dev_macs = manArq.openWBBs()
-        for i in range(len(dev_names)):
-             self.liststore_devices.append([dev_names[i]])
-
-        #Change Events
-        self.combo_box_in_saved.connect("changed", self.combo_box_in_saved_changed)
+        self.combobox_in_load_pacient = go("combobox_in_load_pacient")
+        self.combo_box_set_exam = go("combo_box_set_exam")
 
         #Bars
         self.progressbar1 = go("progressbar1")
@@ -613,6 +820,7 @@ if __name__ == "__main__":
     #    cur.execute("CREATE TABLE devices(id SERIAL PRIMARY KEY,name VARCHAR(50),mac VARCHAR(17));")
     #except:
     #       print("Can't create table. Maybe it already exists.")
+    #conn.commit()
 
     main = Iem_wbb()
     Gtk.main()

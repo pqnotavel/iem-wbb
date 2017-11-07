@@ -32,6 +32,7 @@ def saveWBB(dict_WBB):
     #Escrevendo dados no arquivo
     worksheet_write.write(lin, 0, dict_WBB['Nome'])
     worksheet_write.write(lin, 1, dict_WBB['MAC'])
+    worksheet_write.write(lin, 2, dict_WBB['Padrao'])
 
     #Salvando Arquivo editado
     workbook_write.save('Devices.xls')
