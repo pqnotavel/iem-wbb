@@ -195,7 +195,7 @@ class Iem_wbb:
 
         self.axis.set_xlim(-max_absoluto_ML, max_absoluto_ML)
         self.axis.set_ylim(-max_absoluto_AP, max_absoluto_AP)
-        self.axis.plot(MLs, APs,'-.',color='r')
+        self.axis.plot(MLs, APs,'.-',color='r')
         self.canvas.draw()
 
         APs, MLs = calc.geraAP_ML(APs, MLs)
@@ -244,7 +244,7 @@ class Iem_wbb:
         self.axis2.set_xlim(-max_absoluto_ML, max_absoluto_ML)
         self.axis2.set_ylim(-max_absoluto_AP, max_absoluto_AP)
 
-        self.axis2.plot(MLs, APs,'-.',color='g')
+        self.axis2.plot(MLs, APs,'.-',color='g')
         self.axis2.set_ylabel('AP')
         self.axis2.set_xlabel('ML')
         self.canvas2.draw()
@@ -600,7 +600,7 @@ class Iem_wbb:
 
         self.axis.set_xlim(-max_absoluto_ML, max_absoluto_ML)
         self.axis.set_ylim(-max_absoluto_AP, max_absoluto_AP)
-        self.axis.plot(MLs, APs,'-.',color='r')
+        self.axis.plot(MLs, APs,'.-',color='r')
         self.canvas.draw()
 
         APs, MLs = calc.geraAP_ML(APs, MLs)
@@ -649,7 +649,7 @@ class Iem_wbb:
         self.axis2.set_xlim(-max_absoluto_ML, max_absoluto_ML)
         self.axis2.set_ylim(-max_absoluto_AP, max_absoluto_AP)
 
-        self.axis2.plot(MLs, APs,'-.',color='g')
+        self.axis2.plot(MLs, APs,'.-',color='g')
         self.axis2.set_ylabel('AP')
         self.axis2.set_xlabel('ML')
         self.canvas2.draw()
@@ -810,7 +810,7 @@ if __name__ == "__main__":
     global conn, cur
 
     '''Conecting to DB'''
-    conn = psycopg2.connect("dbname=iem_wbb host=localhost user=postgres password=123")
+    conn = psycopg2.connect("dbname=iem_wbb host=localhost user=postgres password=rai1008!")
     '''Abrindo um cursor para manipular o banco'''
     cur = conn.cursor()
     '''Criando a tabela de pacientes'''
