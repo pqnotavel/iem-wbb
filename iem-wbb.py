@@ -34,7 +34,7 @@ MLs = []
 pacient = {}
 WBB = {}
 
-global wiimote, battery, address, child, relative, nt, conn, cur, modifying, is_connected, is_pacient, user_ID
+global devices, device_ID, wiimote, battery, child, relative, nt, conn, cur, modifying, is_connected, is_pacient, user_ID
 
 class Iem_wbb:
 
@@ -501,7 +501,7 @@ class Iem_wbb:
         self.saveddeviceswindow1.hide()
 
     def on_start_search_button_clicked(self, widget):
-        global wiimote, battery, address, is_connected
+        global is_connected, devices
 
         self.batterylabel.set_text("Bateria:")
         is_connected = False
@@ -511,22 +511,51 @@ class Iem_wbb:
 
         print("Buscando novo dispositivo")
 
-        wiimote, battery, address = conect.searchWBB()
+        devices = conect.searchWBB()
 
-        is_connected = True
+        self.list_box_in_search.forall(self.list_box_in_search.remove())
+        for addr, name in devices:
+            print(name + ' - ' + addr)
+            row = Gtk.ListBoxRow()
+            label = Gtk.Label(name + ' - ' + addr)
+            print(label.get_text())
+            row.add(label)
+            self.list_box_in_search.add(row)
 
-        self.device_mac_in_search.set_text(address)
-        self.batterylabel.set_text("Bateria: " + str(int(100*battery))+"%")
-        self.batterylabel.set_visible(True)
+        self.list_box_in_search.show_all() 
 
-        self.image_statusbar1.set_from_file("green.png")
-        self.label_statusbar1.set_text("Conectado")
-        self.spinner_in_search.stop()
+        self.connect_button_in_search.set_sensitive(True)
         self.save_device_in_search.set_sensitive(True)
-        self.device_name_in_search.set_sensitive(True)
-        self.capture_button.set_sensitive(True)
+        self.spinner_in_search.stop()
 
- 
+    def on_connect_button_in_search_clicked(self, widget):
+        global wiimote, battery, is_connected, devices, device_ID
+
+        device_ID = int(self.list_box_in_search.get_active_id())
+
+        wiimote, battery = conect.connectToWBB(devices[device_ID][0])
+
+        if(wiimote):
+            is_connected = True
+            self.batterylabel.set_text("Bateria: " + str(int(100*battery))+"%")
+            self.batterylabel.set_visible(True)
+            self.image_statusbar1.set_from_file("green.png")
+            self.label_statusbar1.set_text("Conectado")
+            self.capture_button.set_sensitive(True)
+    
+    def on_save_device_in_search_clicked(self, widget):
+        global devices, device_ID
+
+        self.device_name_in_new.set_text(devices[device_ID][1])
+        self.device_mac_in_new.set_text(devices[device_ID][0])
+        self.device_mac_in_new.set_sensitive(False)
+        self.newdevicewindow1.show()
+
+    def on_cancel_in_search_clicked(self, widget):
+        self.spinner_in_search.stop()
+        self.searchdevicewindow1.hide()
+        self.window.get_focus()
+
     #Show saved devices window
     def on_connect_to_saved_device_activate(self, menuitem, data=None):
         global cur, is_connected
@@ -572,18 +601,19 @@ class Iem_wbb:
 
         wiimote, battery = conect.connectToWBB(MAC)
 
-        is_connected = True
+        if(wiimote):
+            is_connected = True
 
-        self.batterylabel.set_text("Bateria: " + str(int(100*battery))+"%")
-        self.batterylabel.set_visible(True)
+            self.batterylabel.set_text("Bateria: " + str(int(100*battery))+"%")
+            self.batterylabel.set_visible(True)
 
-        self.image_statusbar1.set_from_file("green.png")
-        self.label_statusbar1.set_text("Conectado")
-        self.instructions_on_saved_box.set_visible(False)
-        self.connect_in_saved_button.set_sensitive(False)
-        self.saveddeviceswindow1.hide()
-        self.window.get_focus()
-        self.capture_button.set_sensitive(True)
+            self.image_statusbar1.set_from_file("green.png")
+            self.label_statusbar1.set_text("Conectado")
+            self.instructions_on_saved_box.set_visible(False)
+            self.connect_in_saved_button.set_sensitive(False)
+            self.saveddeviceswindow1.hide()
+            self.window.get_focus()
+            self.capture_button.set_sensitive(True)
 
     def on_cancel_button_in_add_device_clicked(self, widget):
         print("Adição de dispositivo cancelada")
@@ -634,16 +664,6 @@ class Iem_wbb:
             nt = NavigationToolbar(child, self.advancedgraphswindow)
             self.boxAdvanced.pack_start(nt, expand=False, fill=True, padding=0)
             self.advancedgraphswindow.show()
-
-    def on_save_device_in_search_clicked(self, widget):
-        self.spinner_in_search.stop()
-        self.searchdevicewindow1.hide()
-        self.window.get_focus()
-
-    def on_cancel_in_search_clicked(self, widget):
-        self.spinner_in_search.stop()
-        self.searchdevicewindow1.hide()
-        self.window.get_focus()
 
     def on_cancel_in_standup_clicked(self, widget):
         self.standupwindow1.hide()
@@ -932,6 +952,7 @@ class Iem_wbb:
         self.changepacientbutton = go("changepacientbutton")
         self.start_capture_button = go("start_capture_button")
         self.save_device_in_search = go("save_device_in_search")
+        self.connect_button_in_search = go("connect_button_in_search")
         self.connect_in_saved_button = go("connect_in_saved_button")
         self.save_exam_button = go("save_exam_button")
         self.load_exam_button = go("load_exam_button")
@@ -961,8 +982,6 @@ class Iem_wbb:
         self.ID_entry = go("ID_entry")
         self.weight = go("weight")
         self.imc = go("imc")
-        self.device_name_in_search = go("device_name_in_search")
-        self.device_mac_in_search = go("device_mac_in_search")
         self.device_name_in_new = go("device_name_in_new")
         self.device_mac_in_new = go("device_mac_in_new")
         self.mac_entry_in_saved = go("mac_entry_in_saved")
@@ -981,6 +1000,7 @@ class Iem_wbb:
 
         #Combo-boxes
         self.combo_box_in_saved = go("combo_box_in_saved")
+        self.list_box_in_search = go("list_box_in_search")
         self.sex_combobox = go("sex_combobox")
         self.combobox_in_load_pacient = go("combobox_in_load_pacient")
         self.combo_box_set_exam = go("combo_box_set_exam")
@@ -1023,18 +1043,21 @@ class Iem_wbb:
 if __name__ == "__main__":
     global conn, cur
 
-    '''Conecting to DB'''
+    '''Connecting to DB'''
     conn = psycopg2.connect("dbname=iem_wbb host=localhost user=postgres password=postgres")
-    '''Abrindo um cursor para manipular o banco'''
+    '''Opening DB cursor'''
     cur = conn.cursor()
-    '''Criando a tabela de pacientes'''
+    '''Creating tables'''
     #try:
     #    cur.execute("CREATE TABLE pacients(id serial PRIMARY KEY, name text, sex char(5), age smallint, height numeric(3,2), weight numeric(5,2), imc numeric(3,1));")
     #    cur.execute("CREATE TABLE exams(id SERIAL PRIMARY KEY, APs NUMERIC(16,15)[], MLs NUMERIC(16,15)[], date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), pac_id INT REFERENCES pacients(id));")
     #    cur.execute("CREATE TABLE devices(id SERIAL PRIMARY KEY,name VARCHAR(50),mac VARCHAR(17));")
+    #    conn.commit()
     #except:
     #       print("Can't create table. Maybe it already exists.")
-    #conn.commit()
-
+    
+    #while(Gtk.events_pending()):
+    #        Gtk.main_iteration()
+    
     main = Iem_wbb()
     Gtk.main()

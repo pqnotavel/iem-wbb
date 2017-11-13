@@ -2,42 +2,21 @@
 # 00:22:4C:56:D3:F4
 
 import cwiid
-import os
-import time as ptime
-import calculos as calc
+#mport os
+#import time as ptime
+#import calculos as calc
 import bluetooth
-
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
 
 
 def searchWBB():
 
-    nearby_devices = bluetooth.discover_devices()
+    print ("Start discovering....")
+    nearby_devices = bluetooth.discover_devices(duration=1, lookup_names = True)
 
-    i=0
-    wiimote = cwiid.Wiimote(nearby_devices[i])
-    wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
-    wiimote.request_status()
-    print(nearby_devices[i])
-    address = nearby_devices[i]
-
-    while (wiimote.state['ext_type'] != cwiid.EXT_BALANCE):
-        try:
-            wiimote = cwiid.Wiimote(nearby_devices[i])
-            wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
-            wiimote.request_status()
-            print(nearby_devices[i])
-            address = nearby_devices[i]
-        except RuntimeError:
-            if (i>=len(nearby_devices)):
-                quit()
-                break
-            print ("Error opening wiimote connection")
-        while(Gtk.events_pending()):
-            Gtk.main_iteration()
-
-    battery = wiimote.state['battery']/cwiid.BATTERY_MAX
-
-    return wiimote, battery, address
+    return nearby_devices
 
 
 def connectToWBB(MAC):
