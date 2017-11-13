@@ -1,46 +1,46 @@
 # -*- coding: utf-8 -*-
+# 00:22:4C:56:D3:F4
 
 import cwiid
 import os
 import time as ptime
 import calculos as calc
+import bluetooth
+
+
 
 def searchWBB():
 
-    wiimote = cwiid.Wiimote()
+    nearby_devices = bluetooth.discover_devices()
+
+    i=0
+    wiimote = cwiid.Wiimote(nearby_devices[i])
     wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
     wiimote.request_status()
+    print(nearby_devices[i])
+    address = nearby_devices[i]
 
-    i=1;
     while (wiimote.state['ext_type'] != cwiid.EXT_BALANCE):
         try:
-            wiimote = cwiid.Wiimote()
+            wiimote = cwiid.Wiimote(nearby_devices[i])
             wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
             wiimote.request_status()
+            print(nearby_devices[i])
+            address = nearby_devices[i]
         except RuntimeError:
-            if (i>10):
+            if (i>=len(nearby_devices)):
                 quit()
                 break
             print ("Error opening wiimote connection")
-            print ("attempt " + str(i))
-            i +=1
-
-    #while(wiimote.state['ext_type'] != cwiid.EXT_BALANCE and i<10):
-    #    wiimote.close()
-    #    wiimote = cwiid.Wiimote()
-    #    wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
-    #    wiimote.request_status()
-    #    i+=1
-
+        while(Gtk.events_pending()):
+            Gtk.main_iteration()
 
     battery = wiimote.state['battery']/cwiid.BATTERY_MAX
 
-    return wiimote, battery
-
+    return wiimote, battery, address
 
 
 def connectToWBB(MAC):
-
     wiimote = cwiid.Wiimote(MAC)
     wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
     wiimote.request_status()
@@ -59,10 +59,8 @@ def connectToWBB(MAC):
             print ("attempt " + str(i))
             i +=1
 
-    #print(wiimote.get_mesg())
-
     battery = wiimote.state['battery']/cwiid.BATTERY_MAX
-
+    
     return wiimote, battery
 
 

@@ -13,27 +13,162 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import Gdk
-from gi.repository import GObject
+#from gi.repository import GObject
 
 import calculos as calc
 import conexao as conect
 import ManipularArquivo as manArq
 
 from matplotlib.figure import Figure
+from matplotlib import pyplot as plt
+from matplotlib import cm
 from matplotlib.backends.backend_gtk3cairo import FigureCanvasGTK3Cairo as FigureCanvas
 from matplotlib.backends.backend_gtk3 import NavigationToolbar2GTK3 as NavigationToolbar
 
 import psycopg2
+
+from bluetooth.btcommon import is_valid_address as iva
 
 APs = []
 MLs = []
 pacient = {}
 WBB = {}
 
-global wiimote, battery, child, relative, nt, plotTitle, conn, cur, modifying
+global wiimote, battery, address, child, relative, nt, conn, cur, modifying, is_connected, is_pacient, user_ID
 
 class Iem_wbb:
 
+    def on_cancel_button_in_login_clicked(self, widget):
+        print("Quit in login with cancel_button")
+        cur.close()
+        conn.close()
+        Gtk.main_quit()
+
+    def on_login_window_destroy(self, object, data=None):
+        print("Quit in login from menu")
+        cur.close()
+        conn.close()
+        Gtk.main_quit()
+
+    def on_login_button_clicked(self, widget):
+        global cur, user_ID
+
+        self.messagedialog1.set_transient_for(self.login_window)
+        username = self.username_entry_in_login.get_text()
+        password = self.password_entry_in_login.get_text()
+
+        cur.execute("SELECT username FROM users;")
+        rows = cur.fetchall()
+        user_exists = False
+        i = 0
+        while (not (user_exists)) and (i<len(rows)):
+            if(rows[i][0] == username):
+                user_exists = True
+            i+=1
+
+        cur.execute("SELECT crypt(%s, password) = password FROM users WHERE username = %s;", (password, username))
+        row = cur.fetchall()
+
+        if(username == "" or not (user_exists)):
+            self.messagedialog1.format_secondary_text("Nome de usuário inválido, tente novamente.")
+            self.messagedialog1.show()
+            self.username_entry_in_register.grab_focus()
+        elif(password == "" or len(password) < 8 or not (row[0][0])):
+            self.messagedialog1.format_secondary_text("Senha inválida, tente novamente.")
+            self.messagedialog1.show()
+            self.password_entry_in_register.grab_focus()
+        else:
+            if not (user_exists):
+                self.messagedialog1.format_secondary_text("Nome de usuário inválido, tente novamente.")
+                self.messagedialog1.show()
+                self.username_entry_in_register.grab_focus()
+            else:
+                user_ID = str(i)
+                print("Login as " + username)
+                self.login_window.hide()
+                self.window.set_title(self.window.get_title() + " - " + username)
+                self.window.show_all()
+                self.progressbar1.set_visible(False)
+        
+    def on_register_new_user_button_clicked(self, widget):
+        print("Register Window")
+        self.full_name_entry_in_register.set_text("")
+        self.username_entry_in_register.set_text("")
+        self.password_entry_in_register.set_text("")
+        self.password_check_entry_in_register.set_text("")
+        self.email_entry_in_register.set_text("")
+        self.adm_password_entry_in_register.set_text("")
+        self.register_window.show()
+
+    def on_register_user_button_clicked(self, widget):
+        global cur
+
+        self.messagedialog1.set_transient_for(self.register_window)
+        name = self.full_name_entry_in_register.get_text()
+        username = self.username_entry_in_register.get_text()
+        password = self.password_entry_in_register.get_text()
+        password_check = self.password_check_entry_in_register.get_text()
+        email = self.email_entry_in_register.get_text()
+        adm_password = self.adm_password_entry_in_register.get_text()
+
+        cur.execute("SELECT username FROM users;")
+        rows = cur.fetchall()
+        user_exists = False
+        i = 0
+        while (not (user_exists)) and (i<len(rows)):
+            if(rows[i][0] == username):
+                user_exists = True
+            i+=1
+
+        adm_pass = False
+        select = "SELECT crypt(%s, password) = password FROM users WHERE is_adm = TRUE;" % (adm_password)
+        cur.execute(select)
+        rows = cur.fetchall()
+        for i in range(len(rows[0])):
+            if(rows[0][i]):
+                adm_pass = True
+
+        if(name == ""):
+            self.messagedialog1.format_secondary_text("Nome inválido, tente novamente.")
+            self.messagedialog1.show()
+            self.full_name_entry_in_register.grab_focus()
+        elif(username == "" or user_exists):
+            self.messagedialog1.format_secondary_text("Nome de usuário inválido, tente novamente.")
+            self.messagedialog1.show()
+            self.username_entry_in_register.grab_focus()
+        elif(password == "" or len(password) < 8):
+            self.messagedialog1.format_secondary_text("Senha inválida, tente novamente.")
+            self.messagedialog1.show()
+            self.password_entry_in_register.grab_focus()
+        elif(password != password_check):
+            self.messagedialog1.format_secondary_text("Senhas não correspondem, tente novamente.")
+            self.messagedialog1.show()
+            self.password_check_entry_in_register.grab_focus()
+        elif(email == ""):
+            self.messagedialog1.format_secondary_text("E-mail inválido, tente novamente.")
+            self.messagedialog1.show()
+            self.email_entry_in_register.grab_focus()
+        elif(adm_password == "" or  not (adm_pass)):
+            self.messagedialog1.format_secondary_text("Senha do administrador inválida, tente novamente.")
+            self.messagedialog1.show()
+            self.email_entry_in_register.grab_focus()
+        else:
+            cur.execute("INSERT INTO users (name, username, password, email) VALUES (%s, %s, crypt(%s, gen_salt('md5')), %s);", (name, username, password, email))
+            conn.commit()
+            self.register_window.hide()
+            self.username_entry_in_login.grab_focus()
+
+
+    def close_register_window(self, arg1, arg2):
+        self.register_window.hide()
+        self.username_entry_in_login.grab_focus()
+
+        return True
+        
+    def on_cancel_in_register_button_clicked(self, widget):
+        self.register_window.hide()
+        self.username_entry_in_login.grab_focus()
+        
     def on_window1_destroy(self, object, data=None):
         print("Quit with cancel")
         cur.close()
@@ -48,25 +183,51 @@ class Iem_wbb:
 
     #Destroy and rebuild all
     def on_new_activate(self, menuitem, data=None):
-        #self.name_entry.set_text('')
-        #self.sex_entry.set_text('')
-        #self.age_entry.set_text('')
-        #self.height_entry.set_text('')
-        #self.name_entry.set_editable(True)
-        #self.sex_entry.set_editable(True)
-        #self.age_entry.set_editable(True)
-        #self.height_entry.set_editable(True)
-        self.window.hide()
-        self.__init__()
+        global is_pacient, pacient
+
+        pacient = {}
+        is_pacient = False
+
+        self.ID_entry.set_text('')
+        self.name_entry.set_text('')
+        self.sex_combobox.set_active_id()
+        self.age_entry.set_text('')
+        self.height_entry.set_text('')
+        self.weight.set_text('')
+        self.imc.set_text('')
+        self.name_entry.set_editable(True)
+        self.age_entry.set_editable(True)
+        self.height_entry.set_editable(True)
+        self.name_entry.set_sensitive(True)
+        self.age_entry.set_sensitive(True)
+        self.height_entry.set_sensitive(True)
+        self.sex_combobox.set_sensitive(True)
+
+        self.combo_box_set_exam.remove_all()
+        self.load_exam_button.set_sensitive(False)
+        self.savepacient_button.set_sensitive(True)
+        self.changepacientbutton.set_sensitive(False)
+        self.axis.clear()
+        self.axis.set_ylabel('AP')
+        self.axis.set_xlabel('ML')
+        self.axis2.clear()
+        self.axis2.set_ylabel('AP')
+        self.axis2.set_xlabel('ML')
+        self.axis3.clear()
+        self.axis3.set_ylabel('AP')
+        self.axis3.set_xlabel('MP')
+        self.progressbar1.set_visible(False)
 
     def on_open_activate(self, menuitem, data=None):
-        global cur
+        global cur, is_pacient
+
+        is_pacient = False
 
         self.pacient_label_in_load.set_text("")
 
         #Fills the combobox with pacients names
         self.combobox_in_load_pacient.remove_all()
-        cur.execute("SELECT id, name FROM pacients;")
+        cur.execute("SELECT id, name FROM pacients ORDER BY id;")
         rows = cur.fetchall()
         for row in rows:
             self.combobox_in_load_pacient.append(str(row[0]),str(row[0]) + ' - ' + row[1])
@@ -84,40 +245,45 @@ class Iem_wbb:
         ID = self.combobox_in_load_pacient.get_active_id()
         ID = str(ID)
 
-        #Selects the active row from table pacients
-        cur.execute("SELECT * FROM pacients WHERE id = (%s);", (ID))
-        row = cur.fetchall()
+        if(ID != "None"):
+            #Selects the active row from table pacients
+            select = "SELECT * FROM pacients WHERE id = %s;" % (ID)
+            cur.execute(select)
+            row = cur.fetchall()
 
-        #Fills the pacient with row content
-        name = str(row[0][1])
-        sex = str(row[0][2])
-        sex = sex[0]
-        age = str(row[0][3])
-        height = str(row[0][4])
-        weight = str(row[0][5])
-        imc = str(row[0][6])
+            #Fills the pacient with row content
+            name = str(row[0][1])
+            sex = str(row[0][2])
+            sex = sex[0]
+            age = str(row[0][3])
+            height = str(row[0][4])
+            weight = str(row[0][5])
+            imc = str(row[0][6])
 
-        self.pacient_label_in_load.set_text('Nome: ' + name +
-            '\n' + 'Sexo: ' + sex +
-            '\n' + 'Idade: ' + age +
-            '\n' + 'Altura: ' + height +
-            '\n' + 'Peso: ' + weight +
-            '\n' + 'IMC: ' + imc)
+            self.pacient_label_in_load.set_text('Nome: ' + name +
+                '\n' + 'Sexo: ' + sex +
+                '\n' + 'Idade: ' + age +
+                '\n' + 'Altura: ' + height +
+                '\n' + 'Peso: ' + weight +
+                '\n' + 'IMC: ' + imc)
 
-        pacient = {'Nome': name, 'ID': ID, 'Sexo': sex, 'Idade': age, 'Altura': height, 'Peso' : weight, 'IMC': imc}
+            pacient = {'Nome': name, 'ID': ID, 'Sexo': sex, 'Idade': age, 'Altura': height, 'Peso' : weight, 'IMC': imc}
+
 
     def on_load_pacient_button_clicked(self, widget):
-        global pacient, cur
+        global pacient, cur, is_pacient
+
+        is_pacient = True
 
         #Clears graphs and label contents
         self.pacient_label_in_load.set_text("")
         self.combo_box_set_exam.remove_all()
         self.axis.clear()
         self.axis.set_ylabel('AP')
-        self.axis.set_xlabel('MP')
+        self.axis.set_xlabel('ML')
         self.axis2.clear()
         self.axis2.set_ylabel('AP')
-        self.axis2.set_xlabel('MP')
+        self.axis2.set_xlabel('ML')
 
         #Fill the main window with pacient data
         self.ID_entry.set_text(pacient['ID'])
@@ -144,8 +310,10 @@ class Iem_wbb:
         #Fills the exams_combobox with the dates of current pacient exams
         cur.execute("SELECT * FROM exams WHERE pac_id = (%s)", (pacient['ID']))
         rows = cur.fetchall()
+        i=1
         for row in rows:
-            self.combo_box_set_exam.append(str(row[0]), str(row[0]) + ' - ' + str(row[3]))            
+            self.combo_box_set_exam.append(str(row[0]), str(i) + ' - ' + str(row[3]))
+            i+=1
 
         if(len(rows)):
             self.combo_box_set_exam.set_sensitive(True)
@@ -166,17 +334,19 @@ class Iem_wbb:
         ID = self.combo_box_set_exam.get_active_id()
         ID = str(ID)
 
-        #Selects the active row from table exams
-        cur.execute("SELECT aps, mls FROM exams WHERE id = (%s)", (ID))
-        row = cur.fetchall()
+        if(ID != "None"):
+            #Selects the active row from table exams
+            select = "SELECT aps, mls FROM exams WHERE id = %s" % (ID)
+            cur.execute(select)
+            row = cur.fetchall()
 
-        APs = []
-        MLs = []
+            APs = []
+            MLs = []
 
-        for x in row[0][0]:
-            APs.append(float(x))
-        for x in row[0][1]:
-            MLs.append(float(x))
+            for x in row[0][0]:
+                APs.append(float(x))
+            for x in row[0][1]:
+                MLs.append(float(x))
 
     def on_load_exam_button_clicked(self, widget):
         global APs, MLs
@@ -191,18 +361,17 @@ class Iem_wbb:
 
         self.axis.clear()
         self.axis.set_ylabel('AP')
-        self.axis.set_xlabel('MP')
-
+        self.axis.set_xlabel('ML')
         self.axis.set_xlim(-max_absoluto_ML, max_absoluto_ML)
         self.axis.set_ylim(-max_absoluto_AP, max_absoluto_AP)
         self.axis.plot(MLs, APs,'.-',color='r')
         self.canvas.draw()
 
-        APs, MLs = calc.geraAP_ML(APs, MLs)
+        APs_Processado, MLs_Processado = calc.geraAP_ML(APs, MLs)
 
-        dis_resultante_total = calc.distanciaResultante(APs, MLs)
-        dis_resultante_AP = calc.distanciaResultanteParcial(APs)
-        dis_resultante_ML = calc.distanciaResultanteParcial(MLs)
+        dis_resultante_total = calc.distanciaResultante(APs_Processado, MLs_Processado)
+        dis_resultante_AP = calc.distanciaResultanteParcial(APs_Processado)
+        dis_resultante_ML = calc.distanciaResultanteParcial(MLs_Processado)
 
         dis_media = calc.distanciaMedia(dis_resultante_total)
 
@@ -210,9 +379,9 @@ class Iem_wbb:
         dis_rms_AP = calc.distRMS(dis_resultante_AP)
         dis_rms_ML = calc.distRMS(dis_resultante_ML)
 
-        totex_total = calc.totex(APs, MLs)
-        totex_AP = calc.totexParcial(APs)
-        totex_ML = calc.totexParcial(MLs)
+        totex_total = calc.totex(APs_Processado, MLs_Processado)
+        totex_AP = calc.totexParcial(APs_Processado)
+        totex_ML = calc.totexParcial(MLs_Processado)
 
         mvelo_total = calc.mVelo(totex_total, 20)
         mvelo_AP = calc.mVelo(totex_AP, 20)
@@ -232,19 +401,18 @@ class Iem_wbb:
         self.entry_MVELO_AP.set_text(str(mvelo_AP))
         self.entry_MVELO_ML.set_text(str(mvelo_ML))
 
-        max_absoluto_AP = calc.valorAbsoluto(min(APs), max(APs))
-        max_absoluto_ML = calc.valorAbsoluto(min(MLs), max(MLs))
+        max_absoluto_AP = calc.valorAbsoluto(min(APs_Processado), max(APs_Processado))
+        max_absoluto_ML = calc.valorAbsoluto(min(MLs_Processado), max(MLs_Processado))
 
         max_absoluto_AP *=1.25
         max_absoluto_ML *=1.25
 
         print('max_absoluto_AP:', max_absoluto_AP, 'max_absoluto_ML:', max_absoluto_ML)
+        
         self.axis2.clear()
-
         self.axis2.set_xlim(-max_absoluto_ML, max_absoluto_ML)
         self.axis2.set_ylim(-max_absoluto_AP, max_absoluto_AP)
-
-        self.axis2.plot(MLs, APs,'.-',color='g')
+        self.axis2.plot(MLs_Processado, APs_Processado,'.-',color='g')
         self.axis2.set_ylabel('AP')
         self.axis2.set_xlabel('ML')
         self.canvas2.draw()
@@ -252,10 +420,12 @@ class Iem_wbb:
     #Show newdevicewindow1
     def on_new_device_activate(self, menuitem, data=None):
         print("Adicionando novo dispositivo")
+        self.add_as_default_button_in_add_device.set_active(False)
         self.newdevicewindow1.show()
 
     def on_add_button_in_add_device_clicked(self, widget):
 
+        self.messagedialog1.set_transient_for(self.newdevicewindow1)
         name = self.device_name_in_new.get_text()
         mac = self.device_mac_in_new.get_text()
         is_default = self.add_as_default_button_in_add_device.get_active()
@@ -263,12 +433,12 @@ class Iem_wbb:
         if (name == ""):
             self.messagedialog1.format_secondary_text("Nome inválido, tente novamente.")
             self.messagedialog1.show()
-        elif((mac == "") or (len(mac)!=17)):
+        elif((mac == "") or not (iva(mac))):
             self.messagedialog1.format_secondary_text("MAC inválido, tente novamente.")
             self.messagedialog1.show()
         else:
             WBB = {'Nome':name, 'MAC':mac, 'Padrao' : is_default}
-            manArq.saveWBB(WBB)
+            #manArq.saveWBB(WBB)
             if(is_default):
                 cur.execute("SELECT * FROM devices_id_seq;")
                 row = cur.fetchall()
@@ -288,8 +458,10 @@ class Iem_wbb:
 
     #Disconnet wiimote
     def on_disconnect_activate(self, menuitem, data=None):
-        global wiimote
+        global wiimote, is_connected
         conect.closeConection(wiimote)
+        is_connected = False
+        self.batterylabel.set_text("Bateria:")
         self.image_statusbar1.set_from_file("red.png")
         self.label_statusbar1.set_text("Não conectado")
 
@@ -329,15 +501,21 @@ class Iem_wbb:
         self.saveddeviceswindow1.hide()
 
     def on_start_search_button_clicked(self, widget):
-        global wiimote, battery
+        global wiimote, battery, address, is_connected
+
+        self.batterylabel.set_text("Bateria:")
+        is_connected = False
 
         self.image_statusbar1.set_from_file("red.png")
         self.label_statusbar1.set_text("Não conectado")
 
         print("Buscando novo dispositivo")
 
-        wiimote, battery = conect.searchWBB()
+        wiimote, battery, address = conect.searchWBB()
 
+        is_connected = True
+
+        self.device_mac_in_search.set_text(address)
         self.batterylabel.set_text("Bateria: " + str(int(100*battery))+"%")
         self.batterylabel.set_visible(True)
 
@@ -351,7 +529,9 @@ class Iem_wbb:
  
     #Show saved devices window
     def on_connect_to_saved_device_activate(self, menuitem, data=None):
-        global cur
+        global cur, is_connected
+
+        is_connected = False
 
         #Fills the combobox with devices names
         self.combo_box_in_saved.remove_all()
@@ -371,17 +551,19 @@ class Iem_wbb:
         ID = self.combo_box_in_saved.get_active_id()
         ID = str(ID)
 
-        #Selects the active row from table devices
-        cur.execute("SELECT mac FROM devices WHERE id = (%s);", (ID))
-        row = cur.fetchall()
+        if(ID != "None"):
+            #Selects the active row from table devices
+            cur.execute("SELECT mac FROM devices WHERE id = (%s);", (ID))
+            row = cur.fetchall()
 
-        self.mac_entry_in_saved.set_text(row[0][0])
-        self.connect_in_saved_button.set_sensitive(True)
-        self.instructions_on_saved_box.set_visible(True)
+            self.mac_entry_in_saved.set_text(row[0][0])
+            self.connect_in_saved_button.set_sensitive(True)
+            self.instructions_on_saved_box.set_visible(True)
 
     def on_connect_in_saved_button_clicked(self, widget):
-        global wiimote, battery
+        global wiimote, battery, is_connected
 
+        self.batterylabel.set_text("Bateria:")
         self.image_statusbar1.set_from_file("red.png")
         self.label_statusbar1.set_text("Não conectado")
 
@@ -390,6 +572,8 @@ class Iem_wbb:
 
         wiimote, battery = conect.connectToWBB(MAC)
 
+        is_connected = True
+
         self.batterylabel.set_text("Bateria: " + str(int(100*battery))+"%")
         self.batterylabel.set_visible(True)
 
@@ -397,9 +581,9 @@ class Iem_wbb:
         self.label_statusbar1.set_text("Conectado")
         self.instructions_on_saved_box.set_visible(False)
         self.connect_in_saved_button.set_sensitive(False)
-        self.capture_button.set_sensitive(True)
         self.saveddeviceswindow1.hide()
         self.window.get_focus()
+        self.capture_button.set_sensitive(True)
 
     def on_cancel_button_in_add_device_clicked(self, widget):
         print("Adição de dispositivo cancelada")
@@ -410,11 +594,9 @@ class Iem_wbb:
         self.newdevicewindow1.hide()
 
     def on_boxOriginal_button_press_event(self, widget, event):
-        global plotTitle, child, relative, nt
+        global child, relative, nt
         if event.type == Gdk.EventType.DOUBLE_BUTTON_PRESS and event.button == 1:
             print("Janela Avançada")
-
-            plotTitle = 'Original'
 
             self.boxOriginal.set_focus_child(self.canvas)
             relative = self.boxOriginal
@@ -426,11 +608,9 @@ class Iem_wbb:
             self.advancedgraphswindow.show()
 
     def on_boxProcessado_button_press_event(self, widget, event):
-        global plotTitle, child, relative, nt
+        global child, relative, nt
         if event.type == Gdk.EventType.DOUBLE_BUTTON_PRESS and event.button == 1:
             print("Janela Avançada")
-
-            plotTitle = 'Processado'
 
             self.boxProcessado.set_focus_child(self.canvas2)
             relative = self.boxProcessado
@@ -442,11 +622,9 @@ class Iem_wbb:
             self.advancedgraphswindow.show()
 
     def on_boxFourier_button_press_event(self, widget, event):
-        global plotTitle, child, relative, nt
+        global child, relative, nt
         if event.type == Gdk.EventType.DOUBLE_BUTTON_PRESS and event.button == 1:
             print("Janela Avançada")
-
-            plotTitle = 'Fourier'
 
             self.boxFourier.set_focus_child(self.canvas3)
             relative = self.boxFourier
@@ -474,7 +652,9 @@ class Iem_wbb:
         self.messagedialog1.hide()
 
     def on_savepacient_button_clicked(self, widget):
-        global pacient, cur, conn, modifying
+        global pacient, cur, conn, modifying, is_pacient
+
+        is_pacient = False
 
         name = self.name_entry.get_text()
         sex = self.sex_combobox.get_active_text()
@@ -510,10 +690,11 @@ class Iem_wbb:
             self.age_entry.set_sensitive(False)
             self.height_entry.set_sensitive(False)
             self.ID_entry.set_sensitive(False)
+            self.capture_button.set_sensitive(True)
             if not modifying:
                 cur.execute("INSERT INTO pacients (name, sex, age, height) VALUES (%s, %s, %s, %s);",(name, sex, age, height))
                 conn.commit()
-                cur.execute("SELECT * FROM pacients;")
+                cur.execute("SELECT * FROM pacients ORDER BY id;")
                 rows = cur.fetchall()
                 print ("\nShow me the databases:\n")
                 for row in rows:
@@ -523,25 +704,26 @@ class Iem_wbb:
                 ID = row[0][1]
                 pacient = {'Nome': name, 'ID': ID, 'Sexo': sex, 'Idade': age, 'Altura': height}
                 self.ID_entry.set_text(str(ID))
-                manArq.makeDir(str(ID) + ' - ' + name)
-                path = str(pacient['ID']) + ' - ' + pacient['Nome']
-                manArq.savePacient(pacient, path)
+                #manArq.makeDir(str(ID) + ' - ' + name)
+                #path = str(pacient['ID']) + ' - ' + pacient['Nome']
+                #manArq.savePacient(pacient, path)
             else:
-                pathOld = str(pacient['ID']) + ' - ' + pacient['Nome']
-                pathNew = str(pacient['ID']) + ' - ' + name
-                manArq.renameDir(pathOld, pathNew)
-                pathOld = pathNew + '/' + pacient['Nome'] + ".xls"
-                pathNew = str(pacient['ID']) + ' - ' + name + '/' + name + ".xls"
-                manArq.renameDir(pathOld, pathNew)
+                #pathOld = str(pacient['ID']) + ' - ' + pacient['Nome']
+                #pathNew = str(pacient['ID']) + ' - ' + name
+                #manArq.renameDir(pathOld, pathNew)
+                #pathOld = pathNew + '/' + pacient['Nome'] + ".xls"
+                #pathNew = str(pacient['ID']) + ' - ' + name + '/' + name + ".xls"
+                #manArq.renameDir(pathOld, pathNew)
                 cur.execute("UPDATE pacients SET sex = (%s), age = (%s), height = (%s), name = (%s) WHERE id = (%s);", (sex, age, height, name, pacient['ID']))
                 conn.commit()
                 pacient['Nome'] = name
                 pacient['Sexo'] = sex
                 pacient['Idade'] = age
                 pacient['Altura'] = height
-                manArq.savePacient(pacient, str(pacient['ID']) + ' - ' + name)
+                #manArq.savePacient(pacient, str(pacient['ID']) + ' - ' + name)
             print("Paciente salvo")
             self.changepacientbutton.set_sensitive(True)
+            is_pacient = True
 
     def on_changepacientbutton_clicked(self, widget):
         global modifying
@@ -558,11 +740,30 @@ class Iem_wbb:
         self.changepacientbutton.set_sensitive(False)
 
     def on_capture_button_clicked(self, widget):
-        self.progressbar1.set_fraction(0)
-        self.standupwindow1.show()
+        global is_connected, is_pacient
+
+        if(not is_pacient):
+            self.messagedialog1.format_secondary_text("É preciso cadastrar ou carregar um paciente para realizar o processo de captura.")
+            self.messagedialog1.show()
+        elif(not is_connected):
+            self.messagedialog1.format_secondary_text("É preciso conectar a um dispositivo para realizar o processo de captura..")
+            self.messagedialog1.show()
+        else:
+            self.progressbar1.set_fraction(0)
+            self.standupwindow1.show()
 
     def on_start_capture_button_clicked(self, widget):
         self.standupwindow1.hide()
+        self.axis.clear()
+        self.axis.set_ylabel('AP')
+        self.axis.set_xlabel('ML')
+        self.axis2.clear()
+        self.axis2.set_ylabel('AP')
+        self.axis2.set_xlabel('ML')
+        self.axis3.clear()
+        self.axis.set_ylabel('AP')
+        self.axis.set_xlabel('ML')
+
         self.progressbar1.set_visible(True)
 
         global APs, MLs, pacient, wiimote, cur, conn
@@ -581,7 +782,7 @@ class Iem_wbb:
 
         APs = []
         MLs = []
-        
+
         for (x,y) in balance:
             APs.append(x)
             MLs.append(y)
@@ -596,18 +797,17 @@ class Iem_wbb:
 
         self.axis.clear()
         self.axis.set_ylabel('AP')
-        self.axis.set_xlabel('MP')
-
+        self.axis.set_xlabel('ML')
         self.axis.set_xlim(-max_absoluto_ML, max_absoluto_ML)
         self.axis.set_ylim(-max_absoluto_AP, max_absoluto_AP)
         self.axis.plot(MLs, APs,'.-',color='r')
         self.canvas.draw()
 
-        APs, MLs = calc.geraAP_ML(APs, MLs)
+        APs_Processado, MLs_Processado = calc.geraAP_ML(APs, MLs)
 
-        dis_resultante_total = calc.distanciaResultante(APs, MLs)
-        dis_resultante_AP = calc.distanciaResultanteParcial(APs)
-        dis_resultante_ML = calc.distanciaResultanteParcial(MLs)
+        dis_resultante_total = calc.distanciaResultante(APs_Processado, MLs_Processado)
+        dis_resultante_AP = calc.distanciaResultanteParcial(APs_Processado)
+        dis_resultante_ML = calc.distanciaResultanteParcial(MLs_Processado)
 
         dis_media = calc.distanciaMedia(dis_resultante_total)
 
@@ -615,9 +815,9 @@ class Iem_wbb:
         dis_rms_AP = calc.distRMS(dis_resultante_AP)
         dis_rms_ML = calc.distRMS(dis_resultante_ML)
 
-        totex_total = calc.totex(APs, MLs)
-        totex_AP = calc.totexParcial(APs)
-        totex_ML = calc.totexParcial(MLs)
+        totex_total = calc.totex(APs_Processado, MLs_Processado)
+        totex_AP = calc.totexParcial(APs_Processado)
+        totex_ML = calc.totexParcial(MLs_Processado)
 
         mvelo_total = calc.mVelo(totex_total, 20)
         mvelo_AP = calc.mVelo(totex_AP, 20)
@@ -637,8 +837,8 @@ class Iem_wbb:
         self.entry_MVELO_AP.set_text(str(mvelo_AP))
         self.entry_MVELO_ML.set_text(str(mvelo_ML))
 
-        max_absoluto_AP = calc.valorAbsoluto(min(APs), max(APs))
-        max_absoluto_ML = calc.valorAbsoluto(min(MLs), max(MLs))
+        max_absoluto_AP = calc.valorAbsoluto(min(APs_Processado), max(APs_Processado))
+        max_absoluto_ML = calc.valorAbsoluto(min(MLs_Processado), max(MLs_Processado))
 
         max_absoluto_AP *=1.25
         max_absoluto_ML *=1.25
@@ -649,7 +849,7 @@ class Iem_wbb:
         self.axis2.set_xlim(-max_absoluto_ML, max_absoluto_ML)
         self.axis2.set_ylim(-max_absoluto_AP, max_absoluto_AP)
 
-        self.axis2.plot(MLs, APs,'.-',color='g')
+        self.axis2.plot(MLs_Processado, APs_Processado,'.-',color='g')
         self.axis2.set_ylabel('AP')
         self.axis2.set_xlabel('ML')
         self.canvas2.draw()
@@ -660,20 +860,25 @@ class Iem_wbb:
         self.save_exam_button.set_sensitive(True)
 
     def on_save_exam_button_clicked(self, widget):
-        global pacient, APs, MLs, cur, conn
-        cur.execute("INSERT INTO exams (APs, MLs, pac_id) VALUES (%s, %s, %s)", (APs, MLs, pacient['ID']))
+        global pacient, APs, MLs, cur, conn, user_ID
+        cur.execute("INSERT INTO exams (APs, MLs, pac_id, usr_id) VALUES (%s, %s, %s, %s)", (APs, MLs, pacient['ID'], user_ID))
         conn.commit()
-        path = 'Pacients/' + str(pacient['ID']) + ' - ' + pacient['Nome']
-        self.fig.canvas.print_png(str(path + '/grafico original'))
-        self.fig2.canvas.print_png(str(path + '/grafico processado'))
-        manArq.saveExam(pacient, APs, MLs, path)
+        #path = 'Pacients/' + str(pacient['ID']) + ' - ' + pacient['Nome']
+        #self.fig.canvas.print_png(str(path + '/grafico original'))
+        #self.fig2.canvas.print_png(str(path + '/grafico processado'))
+        #manArq.saveExam(pacient, APs, MLs, path)
+        self.combo_box_set_exam.set_active_id("0")
+        self.combo_box_set_exam.set_sensitive(True)
+        self.load_exam_button.set_sensitive(True)
         print("Exame Salvo")
         self.save_exam_button.set_sensitive(False)
 
     def __init__(self):
-        global modifying
+        global modifying, is_connected, is_pacient
 
         modifying = False
+        is_connected = False
+        is_pacient = False
 
         self.gladeFile = "iem-wbb.glade"
         self.builder = Gtk.Builder()
@@ -690,6 +895,8 @@ class Iem_wbb:
         self.instructions_on_saved_box = go("instructions_on_saved_box")
 
         #Windows
+        self.login_window = go("login_window")
+        self.register_window = go("register_window")
         self.window = go("window1")
         self.newdevicewindow1 = go("newdevicewindow1")
         self.messagedialog1 = go("messagedialog1")
@@ -700,6 +907,7 @@ class Iem_wbb:
         self.load_pacient_window = go("load_pacient_window")
 
         #Delete-events
+        self.register_window.connect("delete-event", self.close_register_window)
         self.searchdevicewindow1.connect("delete-event", self.close_searchdevicewindow1)
         self.newdevicewindow1.connect("delete-event", self.close_newdevicewindow1)
         self.standupwindow1.connect("delete-event", self.close_standupwindow1)
@@ -718,6 +926,7 @@ class Iem_wbb:
         self.separator_in_saved_devices = go("separator_in_saved_devices")
 
         #Buttons
+        self.login_button = go("login_button")
         self.capture_button = go("capture_button")
         self.savepacient_button = go("savepacient_button")
         self.changepacientbutton = go("changepacientbutton")
@@ -738,11 +947,18 @@ class Iem_wbb:
         self.pacient_label_in_load = go("pacient_label_in_load")
 
         #Entrys
+        self.username_entry_in_login = go("username_entry_in_login")
+        self.password_entry_in_login = go("password_entry_in_login")
+        self.full_name_entry_in_register = go("full_name_entry_in_register")
+        self.username_entry_in_register = go("username_entry_in_register")
+        self.password_entry_in_register = go("password_entry_in_register")
+        self.password_check_entry_in_register = go("password_check_entry_in_register")
+        self.email_entry_in_register = go("email_entry_in_register")
+        self.adm_password_entry_in_register = go("adm_password_entry_in_register")
         self.name_entry = go("name_entry")
         self.age_entry = go("age_entry")
         self.height_entry = go("height_entry")
         self.ID_entry = go("ID_entry")
-        #self.sex_entry = go("sex_entry")
         self.weight = go("weight")
         self.imc = go("imc")
         self.device_name_in_search = go("device_name_in_search")
@@ -774,9 +990,8 @@ class Iem_wbb:
 
         #Plots
         '''Original Graph'''
-        self.fig = Figure(dpi=50)
+        self.fig = plt.figure(dpi=50)
         self.fig.suptitle('Original', fontsize=20)
-
         self.axis = self.fig.add_subplot(111)
         self.axis.set_ylabel('AP', fontsize = 16)
         self.axis.set_xlabel('ML', fontsize = 16)
@@ -802,15 +1017,14 @@ class Iem_wbb:
         self.canvas3 = FigureCanvas(self.fig3)
         self.boxFourier.pack_start(self.canvas3, expand=True, fill=True, padding=0)
 
-        self.window.show_all()
-        self.progressbar1.set_visible(False)
+        self.login_window.show()
 
 
 if __name__ == "__main__":
     global conn, cur
 
     '''Conecting to DB'''
-    conn = psycopg2.connect("dbname=iem_wbb host=localhost user=postgres password=rai1008!")
+    conn = psycopg2.connect("dbname=iem_wbb host=localhost user=postgres password=postgres")
     '''Abrindo um cursor para manipular o banco'''
     cur = conn.cursor()
     '''Criando a tabela de pacientes'''
