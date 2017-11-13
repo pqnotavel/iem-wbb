@@ -2163,7 +2163,7 @@ pressione o botão vermelho "SYNC".</property>
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Dispositivo</property>
+                <property name="label" translatable="yes">Dispositivos</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -2172,7 +2172,7 @@ pressione o botão vermelho "SYNC".</property>
               </packing>
             </child>
             <child>
-              <object class="GtkListBox" id="list_box_in_search">
+              <object class="GtkComboBoxText" id="combo_box_text_in_search">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
               </object>
@@ -2227,6 +2227,7 @@ pressione o botão vermelho "SYNC".</property>
               <object class="GtkButtonBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="homogeneous">True</property>
                 <property name="layout_style">expand</property>
                 <child>
                   <object class="GtkButton" id="save_device_in_search">

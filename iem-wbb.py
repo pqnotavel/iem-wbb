@@ -34,7 +34,7 @@ MLs = []
 pacient = {}
 WBB = {}
 
-global devices, device_ID, wiimote, battery, child, relative, nt, conn, cur, modifying, is_connected, is_pacient, user_ID
+global devices, wiimote, battery, child, relative, nt, conn, cur, modifying, is_connected, is_pacient, user_ID
 
 class Iem_wbb:
 
@@ -451,11 +451,6 @@ class Iem_wbb:
             self.newdevicewindow1.hide()
             self.window.get_focus()
 
-    #Show searchdevicewindow1
-    def on_search_device_activate(self, menuitem, data=None):
-        self.searchdevicewindow1.show()
-        self.spinner_in_search.start()
-
     #Disconnet wiimote
     def on_disconnect_activate(self, menuitem, data=None):
         global wiimote, is_connected
@@ -500,6 +495,12 @@ class Iem_wbb:
         print("Seleção de dispositivo cancelada")
         self.saveddeviceswindow1.hide()
 
+        #Show searchdevicewindow1
+    def on_search_device_activate(self, menuitem, data=None):
+        self.combo_box_text_in_search.remove_all()
+        self.spinner_in_search.start()
+        self.searchdevicewindow1.show()
+
     def on_start_search_button_clicked(self, widget):
         global is_connected, devices
 
@@ -512,26 +513,21 @@ class Iem_wbb:
         print("Buscando novo dispositivo")
 
         devices = conect.searchWBB()
-
-        self.list_box_in_search.forall(self.list_box_in_search.remove())
+        
+        self.combo_box_text_in_search.remove_all()
+        device_ID = 0
         for addr, name in devices:
-            print(name + ' - ' + addr)
-            row = Gtk.ListBoxRow()
-            label = Gtk.Label(name + ' - ' + addr)
-            print(label.get_text())
-            row.add(label)
-            self.list_box_in_search.add(row)
-
-        self.list_box_in_search.show_all() 
+            self.combo_box_text_in_search.append(str(device_ID), 'Nome: ' + name + '\nMAC: ' + addr)
+            device_ID += 1
 
         self.connect_button_in_search.set_sensitive(True)
         self.save_device_in_search.set_sensitive(True)
         self.spinner_in_search.stop()
 
     def on_connect_button_in_search_clicked(self, widget):
-        global wiimote, battery, is_connected, devices, device_ID
+        global wiimote, battery, is_connected, devices
 
-        device_ID = int(self.list_box_in_search.get_active_id())
+        device_ID = int(self.combo_box_text_in_search.get_active_id())
 
         wiimote, battery = conect.connectToWBB(devices[device_ID][0])
 
@@ -544,7 +540,9 @@ class Iem_wbb:
             self.capture_button.set_sensitive(True)
     
     def on_save_device_in_search_clicked(self, widget):
-        global devices, device_ID
+        global devices
+
+        device_ID = int(self.combo_box_text_in_search.get_active_id())
 
         self.device_name_in_new.set_text(devices[device_ID][1])
         self.device_mac_in_new.set_text(devices[device_ID][0])
@@ -552,6 +550,8 @@ class Iem_wbb:
         self.newdevicewindow1.show()
 
     def on_cancel_in_search_clicked(self, widget):
+        self.connect_button_in_search.set_sensitive(False)
+        self.save_device_in_search.set_sensitive(False)
         self.spinner_in_search.stop()
         self.searchdevicewindow1.hide()
         self.window.get_focus()
@@ -1000,7 +1000,7 @@ class Iem_wbb:
 
         #Combo-boxes
         self.combo_box_in_saved = go("combo_box_in_saved")
-        self.list_box_in_search = go("list_box_in_search")
+        self.combo_box_text_in_search = go("combo_box_text_in_search")
         self.sex_combobox = go("sex_combobox")
         self.combobox_in_load_pacient = go("combobox_in_load_pacient")
         self.combo_box_set_exam = go("combo_box_set_exam")
