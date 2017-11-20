@@ -275,12 +275,12 @@
                 <property name="homogeneous">True</property>
                 <property name="layout_style">expand</property>
                 <child>
-                  <object class="GtkButton" id="cancel_button_in_login">
-                    <property name="label" translatable="yes">Cancelar</property>
+                  <object class="GtkButton" id="login_button">
+                    <property name="label" translatable="yes">Entrar</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <signal name="clicked" handler="on_cancel_button_in_login_clicked" swapped="no"/>
+                    <signal name="clicked" handler="on_login_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -289,12 +289,12 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="login_button">
-                    <property name="label" translatable="yes">Entrar</property>
+                  <object class="GtkButton" id="cancel_button_in_login">
+                    <property name="label" translatable="yes">Sair</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <signal name="clicked" handler="on_login_button_clicked" swapped="no"/>
+                    <signal name="clicked" handler="on_cancel_button_in_login_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -508,6 +508,21 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkCheckButton" id="is_adm_button_in_register">
+            <property name="label" translatable="yes">Registrar como Administrador</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">False</property>
+            <property name="halign">center</property>
+            <property name="draw_indicator">True</property>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
             <property name="position">2</property>
           </packing>
         </child>
@@ -516,20 +531,6 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="layout_style">expand</property>
-            <child>
-              <object class="GtkButton" id="cancel_in_register_button">
-                <property name="label" translatable="yes">Cancelar</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <signal name="clicked" handler="on_cancel_in_register_button_clicked" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
             <child>
               <object class="GtkButton" id="register_user_button">
                 <property name="label" translatable="yes">Registrar</property>
@@ -544,11 +545,25 @@
                 <property name="position">1</property>
               </packing>
             </child>
+            <child>
+              <object class="GtkButton" id="cancel_in_register_button">
+                <property name="label" translatable="yes">Cancelar</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <signal name="clicked" handler="on_cancel_in_register_button_clicked" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
           </object>
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">2</property>
+            <property name="position">3</property>
           </packing>
         </child>
       </object>
@@ -611,7 +626,6 @@
   </object>
   <object class="GtkApplicationWindow" id="window1">
     <property name="can_focus">False</property>
-    <property name="title" translatable="yes">IEM-WBB</property>
     <property name="window_position">center</property>
     <property name="destroy_with_parent">True</property>
     <property name="gravity">center</property>
@@ -1843,12 +1857,12 @@
             <property name="homogeneous">True</property>
             <property name="layout_style">expand</property>
             <child>
-              <object class="GtkButton" id="cancel_button_in_add_device">
-                <property name="label" translatable="yes">Cancelar</property>
+              <object class="GtkButton" id="add_button_in_add_device">
+                <property name="label" translatable="yes">Adicionar</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <signal name="clicked" handler="on_cancel_button_in_add_device_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_add_button_in_add_device_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -1857,12 +1871,12 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="add_button_in_add_device">
-                <property name="label" translatable="yes">Adicionar</property>
+              <object class="GtkButton" id="cancel_button_in_add_device">
+                <property name="label" translatable="yes">Cancelar</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <signal name="clicked" handler="on_add_button_in_add_device_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_cancel_button_in_add_device_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -1886,7 +1900,6 @@
     <property name="resizable">False</property>
     <property name="modal">True</property>
     <property name="window_position">center-always</property>
-    <property name="deletable">False</property>
     <property name="transient_for">window1</property>
     <child>
       <object class="GtkBox">
@@ -1983,12 +1996,13 @@
                 <property name="homogeneous">True</property>
                 <property name="layout_style">expand</property>
                 <child>
-                  <object class="GtkButton" id="cancel_in_saved_button">
-                    <property name="label" translatable="yes">Cancelar</property>
+                  <object class="GtkButton" id="connect_in_saved_button">
+                    <property name="label" translatable="yes">Conectar</property>
                     <property name="visible">True</property>
+                    <property name="sensitive">False</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <signal name="clicked" handler="on_cancel_in_saved_button_clicked" swapped="no"/>
+                    <signal name="clicked" handler="on_connect_in_saved_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -1997,13 +2011,12 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="connect_in_saved_button">
-                    <property name="label" translatable="yes">Conectar</property>
+                  <object class="GtkButton" id="cancel_in_saved_button">
+                    <property name="label" translatable="yes">Cancelar</property>
                     <property name="visible">True</property>
-                    <property name="sensitive">False</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <signal name="clicked" handler="on_connect_in_saved_button_clicked" swapped="no"/>
+                    <signal name="clicked" handler="on_cancel_in_saved_button_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -2057,9 +2070,8 @@
               <object class="GtkLabel" id="instructionslabel_in_saved">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Após clicar em Conectar, abra o compartimento
-de baterias e pressione o botão vermelho
-"SYNC".</property>
+                <property name="label" translatable="yes">Abra o compartimento de baterias e 
+pressione o botão vermelho "SYNC".</property>
                 <property name="justify">center</property>
               </object>
               <packing>
@@ -2100,7 +2112,6 @@ de baterias e pressione o botão vermelho
     <property name="resizable">False</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
-    <property name="deletable">False</property>
     <property name="gravity">center</property>
     <property name="transient_for">window1</property>
     <child>
@@ -2112,7 +2123,152 @@ de baterias e pressione o botão vermelho
         <property name="margin_top">10</property>
         <property name="margin_bottom">10</property>
         <property name="spacing">10</property>
-        <property name="homogeneous">True</property>
+        <child>
+          <object class="GtkBox">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="orientation">vertical</property>
+            <property name="spacing">10</property>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Dispositivos</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkComboBoxText" id="combo_box_text_in_search">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButtonBox">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="homogeneous">True</property>
+                <property name="layout_style">expand</property>
+                <child>
+                  <object class="GtkButton" id="start_search_button">
+                    <property name="label" translatable="yes">Buscar</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <signal name="clicked" handler="on_start_search_button_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="cancel_in_search">
+                    <property name="label" translatable="yes">Cancelar</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <signal name="clicked" handler="on_cancel_in_search_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButtonBox">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="homogeneous">True</property>
+                <property name="layout_style">expand</property>
+                <child>
+                  <object class="GtkButton" id="connect_button_in_search">
+                    <property name="label" translatable="yes">Conectar</property>
+                    <property name="visible">True</property>
+                    <property name="sensitive">False</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <signal name="clicked" handler="on_connect_button_in_search_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="save_device_in_search">
+                    <property name="label" translatable="yes">Salvar dispositivo</property>
+                    <property name="visible">True</property>
+                    <property name="sensitive">False</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <signal name="clicked" handler="on_save_device_in_search_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSpinner" id="spinner_in_search">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="halign">center</property>
+                <property name="valign">center</property>
+                <property name="margin_top">25</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">5</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSeparator">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="orientation">vertical</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
         <child>
           <object class="GtkBox">
             <property name="visible">True</property>
@@ -2150,141 +2306,7 @@ pressione o botão vermelho "SYNC".</property>
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkBox">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="orientation">vertical</property>
-            <property name="spacing">10</property>
-            <child>
-              <object class="GtkLabel">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Dispositivos</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkComboBoxText" id="combo_box_text_in_search">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButtonBox">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="homogeneous">True</property>
-                <property name="layout_style">expand</property>
-                <child>
-                  <object class="GtkButton" id="cancel_in_search">
-                    <property name="label" translatable="yes">Cancelar</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <signal name="clicked" handler="on_cancel_in_search_clicked" swapped="no"/>
-                  </object>
-                  <packing>
-                    <property name="expand">True</property>
-                    <property name="fill">True</property>
-                    <property name="position">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkButton" id="start_search_button">
-                    <property name="label" translatable="yes">Buscar</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <signal name="clicked" handler="on_start_search_button_clicked" swapped="no"/>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">2</property>
-                  </packing>
-                </child>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">3</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButtonBox">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="homogeneous">True</property>
-                <property name="layout_style">expand</property>
-                <child>
-                  <object class="GtkButton" id="save_device_in_search">
-                    <property name="label" translatable="yes">Salvar dispositivo</property>
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <signal name="clicked" handler="on_save_device_in_search_clicked" swapped="no"/>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkButton" id="connect_button_in_search">
-                    <property name="label" translatable="yes">Conectar</property>
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <signal name="clicked" handler="on_connect_button_in_search_clicked" swapped="no"/>
-                  </object>
-                  <packing>
-                    <property name="expand">True</property>
-                    <property name="fill">True</property>
-                    <property name="position">1</property>
-                  </packing>
-                </child>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">3</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkSpinner" id="spinner_in_search">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="halign">center</property>
-                <property name="valign">center</property>
-                <property name="margin_top">25</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="position">5</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">1</property>
+            <property name="position">2</property>
           </packing>
         </child>
       </object>
@@ -2354,12 +2376,12 @@ pressione o botão vermelho "SYNC".</property>
             <property name="homogeneous">True</property>
             <property name="layout_style">expand</property>
             <child>
-              <object class="GtkButton" id="cancel_in_standup">
-                <property name="label" translatable="yes">Cancelar</property>
+              <object class="GtkButton" id="start_capture_button">
+                <property name="label" translatable="yes">Iniciar Captura</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <signal name="clicked" handler="on_cancel_in_standup_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_start_capture_button_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -2368,12 +2390,12 @@ pressione o botão vermelho "SYNC".</property>
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="start_capture_button">
-                <property name="label" translatable="yes">Iniciar Captura</property>
+              <object class="GtkButton" id="cancel_in_standup">
+                <property name="label" translatable="yes">Cancelar</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <signal name="clicked" handler="on_start_capture_button_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_cancel_in_standup_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>

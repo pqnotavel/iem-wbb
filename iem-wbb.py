@@ -28,6 +28,7 @@ from matplotlib.backends.backend_gtk3 import NavigationToolbar2GTK3 as Navigatio
 import psycopg2
 
 from bluetooth.btcommon import is_valid_address as iva
+from bluetooth.btcommon import is_valid_address as iva
 
 APs = []
 MLs = []
@@ -49,6 +50,44 @@ class Iem_wbb:
         cur.close()
         conn.close()
         Gtk.main_quit()
+
+    def clear_all(self):
+        global is_pacient, pacient
+
+        pacient = {}
+        is_pacient = False
+
+        self.ID_entry.set_text('')
+        self.name_entry.set_text('')
+        self.sex_combobox.set_active_id()
+        self.age_entry.set_text('')
+        self.height_entry.set_text('')
+        self.weight.set_text('')
+        self.imc.set_text('')
+        self.name_entry.set_editable(True)
+        self.age_entry.set_editable(True)
+        self.height_entry.set_editable(True)
+        self.name_entry.set_sensitive(True)
+        self.age_entry.set_sensitive(True)
+        self.height_entry.set_sensitive(True)
+        self.sex_combobox.set_sensitive(True)
+
+        self.combo_box_set_exam.remove_all()
+        self.load_exam_button.set_sensitive(False)
+
+        self.savepacient_button.set_sensitive(True)
+        self.changepacientbutton.set_sensitive(False)
+
+        self.axis.clear()
+        self.axis.set_ylabel('AP')
+        self.axis.set_xlabel('ML')
+        self.axis2.clear()
+        self.axis2.set_ylabel('AP')
+        self.axis2.set_xlabel('ML')
+        self.axis3.clear()
+        self.axis3.set_ylabel('AP')
+        self.axis3.set_xlabel('MP')
+        self.progressbar1.set_visible(False)
 
     def on_login_button_clicked(self, widget):
         global cur, user_ID
@@ -72,24 +111,21 @@ class Iem_wbb:
         if(username == "" or not (user_exists)):
             self.messagedialog1.format_secondary_text("Nome de usuário inválido, tente novamente.")
             self.messagedialog1.show()
-            self.username_entry_in_register.grab_focus()
+            self.username_entry_in_login.grab_focus()
         elif(password == "" or len(password) < 8 or not (row[0][0])):
             self.messagedialog1.format_secondary_text("Senha inválida, tente novamente.")
             self.messagedialog1.show()
-            self.password_entry_in_register.grab_focus()
+            self.password_entry_in_login.grab_focus()
         else:
-            if not (user_exists):
-                self.messagedialog1.format_secondary_text("Nome de usuário inválido, tente novamente.")
-                self.messagedialog1.show()
-                self.username_entry_in_register.grab_focus()
-            else:
-                user_ID = str(i)
-                print("Login as " + username)
-                self.login_window.hide()
-                self.window.set_title(self.window.get_title() + " - " + username)
-                self.window.show_all()
-                self.progressbar1.set_visible(False)
-        
+            user_ID = str(i)
+            print("Login as " + username)
+            self.login_window.hide()
+            self.window.set_title("IEM_WBB" + " - " + username)
+            self.window.show_all()
+            self.progressbar1.set_visible(False)
+            self.username_entry_in_login.set_text("")
+            self.password_entry_in_login.set_text("")
+
     def on_register_new_user_button_clicked(self, widget):
         print("Register Window")
         self.full_name_entry_in_register.set_text("")
@@ -110,6 +146,7 @@ class Iem_wbb:
         password_check = self.password_check_entry_in_register.get_text()
         email = self.email_entry_in_register.get_text()
         adm_password = self.adm_password_entry_in_register.get_text()
+        is_adm = self.is_adm_button_in_register.get_active()
 
         cur.execute("SELECT username FROM users;")
         rows = cur.fetchall()
@@ -119,14 +156,6 @@ class Iem_wbb:
             if(rows[i][0] == username):
                 user_exists = True
             i+=1
-
-        adm_pass = False
-        select = "SELECT crypt(%s, password) = password FROM users WHERE is_adm = TRUE;" % (adm_password)
-        cur.execute(select)
-        rows = cur.fetchall()
-        for i in range(len(rows[0])):
-            if(rows[0][i]):
-                adm_pass = True
 
         if(name == ""):
             self.messagedialog1.format_secondary_text("Nome inválido, tente novamente.")
@@ -148,12 +177,12 @@ class Iem_wbb:
             self.messagedialog1.format_secondary_text("E-mail inválido, tente novamente.")
             self.messagedialog1.show()
             self.email_entry_in_register.grab_focus()
-        elif(adm_password == "" or  not (adm_pass)):
+        elif(adm_password == "" or adm_password != "adm123"):
             self.messagedialog1.format_secondary_text("Senha do administrador inválida, tente novamente.")
             self.messagedialog1.show()
             self.email_entry_in_register.grab_focus()
         else:
-            cur.execute("INSERT INTO users (name, username, password, email) VALUES (%s, %s, crypt(%s, gen_salt('md5')), %s);", (name, username, password, email))
+            cur.execute("INSERT INTO users (name, username, password, email, is_adm) VALUES (%s, %s, crypt(%s, gen_salt('md5')), %s, %s);", (name, username, password, email, is_adm))
             conn.commit()
             self.register_window.hide()
             self.username_entry_in_login.grab_focus()
@@ -164,11 +193,11 @@ class Iem_wbb:
         self.username_entry_in_login.grab_focus()
 
         return True
-        
+
     def on_cancel_in_register_button_clicked(self, widget):
         self.register_window.hide()
         self.username_entry_in_login.grab_focus()
-        
+
     def on_window1_destroy(self, object, data=None):
         print("Quit with cancel")
         cur.close()
@@ -177,46 +206,13 @@ class Iem_wbb:
 
     def on_gtk_quit_activate(self, menuitem, data=None):
         print("Quit from menu")
-        cur.close()
-        conn.close()
-        Gtk.main_quit()
+        self.window.hide()
+        self.clear_all()
+        self.username_entry_in_login.grab_focus()
+        self.login_window.show()
 
-    #Destroy and rebuild all
     def on_new_activate(self, menuitem, data=None):
-        global is_pacient, pacient
-
-        pacient = {}
-        is_pacient = False
-
-        self.ID_entry.set_text('')
-        self.name_entry.set_text('')
-        self.sex_combobox.set_active_id()
-        self.age_entry.set_text('')
-        self.height_entry.set_text('')
-        self.weight.set_text('')
-        self.imc.set_text('')
-        self.name_entry.set_editable(True)
-        self.age_entry.set_editable(True)
-        self.height_entry.set_editable(True)
-        self.name_entry.set_sensitive(True)
-        self.age_entry.set_sensitive(True)
-        self.height_entry.set_sensitive(True)
-        self.sex_combobox.set_sensitive(True)
-
-        self.combo_box_set_exam.remove_all()
-        self.load_exam_button.set_sensitive(False)
-        self.savepacient_button.set_sensitive(True)
-        self.changepacientbutton.set_sensitive(False)
-        self.axis.clear()
-        self.axis.set_ylabel('AP')
-        self.axis.set_xlabel('ML')
-        self.axis2.clear()
-        self.axis2.set_ylabel('AP')
-        self.axis2.set_xlabel('ML')
-        self.axis3.clear()
-        self.axis3.set_ylabel('AP')
-        self.axis3.set_xlabel('MP')
-        self.progressbar1.set_visible(False)
+        self.clear_all()
 
     def on_open_activate(self, menuitem, data=None):
         global cur, is_pacient
@@ -408,7 +404,7 @@ class Iem_wbb:
         max_absoluto_ML *=1.25
 
         print('max_absoluto_AP:', max_absoluto_AP, 'max_absoluto_ML:', max_absoluto_ML)
-        
+
         self.axis2.clear()
         self.axis2.set_xlim(-max_absoluto_ML, max_absoluto_ML)
         self.axis2.set_ylim(-max_absoluto_AP, max_absoluto_AP)
@@ -416,7 +412,7 @@ class Iem_wbb:
         self.axis2.set_ylabel('AP')
         self.axis2.set_xlabel('ML')
         self.canvas2.draw()
-        
+
     #Show newdevicewindow1
     def on_new_device_activate(self, menuitem, data=None):
         print("Adicionando novo dispositivo")
@@ -513,7 +509,7 @@ class Iem_wbb:
         print("Buscando novo dispositivo")
 
         devices = conect.searchWBB()
-        
+
         self.combo_box_text_in_search.remove_all()
         device_ID = 0
         for addr, name in devices:
@@ -538,7 +534,8 @@ class Iem_wbb:
             self.image_statusbar1.set_from_file("green.png")
             self.label_statusbar1.set_text("Conectado")
             self.capture_button.set_sensitive(True)
-    
+            self.searchdevicewindow1.hide()
+
     def on_save_device_in_search_clicked(self, widget):
         global devices
 
@@ -957,6 +954,7 @@ class Iem_wbb:
         self.save_exam_button = go("save_exam_button")
         self.load_exam_button = go("load_exam_button")
         self.add_as_default_button_in_add_device = go("add_as_default_button_in_add_device")
+        self.is_adm_button_in_register = go("is_adm_button_in_register")
 
         #Spinners
         self.spinner_in_search = go("spinner_in_search")
@@ -1039,7 +1037,6 @@ class Iem_wbb:
 
         self.login_window.show()
 
-
 if __name__ == "__main__":
     global conn, cur
 
@@ -1055,9 +1052,9 @@ if __name__ == "__main__":
     #    conn.commit()
     #except:
     #       print("Can't create table. Maybe it already exists.")
-    
+
     #while(Gtk.events_pending()):
     #        Gtk.main_iteration()
-    
+
     main = Iem_wbb()
     Gtk.main()
