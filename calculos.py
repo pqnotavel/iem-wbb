@@ -9,9 +9,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 def distanciaMedia (lista_valores):
-    soma = sum(list(lista_valores))
-    dist_media = soma/len(lista_valores)
-    return dist_media
+    return sum(list(lista_valores)) / len(lista_valores)
 
 def distanciaResultante(AP, ML):
     distancia_result = []
@@ -19,37 +17,43 @@ def distanciaResultante(AP, ML):
     for i in range(len(AP)):
         DR = sqrt((AP[i]**2)+(ML[i]**2))
         distancia_result.append(DR)
+
     return distancia_result
 
 def distanciaResultanteParcial(APouML):
     distancia_resultparcial = []
 
     for i in range(len(APouML)):
-        #distancia_resultparcial
         DR = sqrt(APouML[i]**2)
         distancia_resultparcial.append(DR)
+
     return distancia_resultparcial
 
 def distRMS (dist_resultante):
     d_R_quadrada =[]
+
     for _ in range(len(dist_resultante)):
         dist_result_quadrada = (dist_resultante[_]**2)
         d_R_quadrada.append(dist_result_quadrada)
+
     soma = sum(list(d_R_quadrada))
     disRMS =sqrt(soma/len(dist_resultante))
+
     return disRMS
 
 def geraAP_ML(valx, valy):
-    soma_AP0 = soma_ML0 = 0.0
-    valores_AP = []
-    valores_ML = []
+    #soma_AP0 = soma_ML0 = 0.0   #variáveis referentes ao somatorio
+    valores_AP = []             #lista que receberá os valores de AP
+    valores_ML = []             #Lista que receberá os valores de ML
 
-    for ele in range(len(valy)):
-        soma_AP0 = soma_AP0 + valx[ele]
-        soma_ML0 = soma_ML0 + valy[ele]
+    #for ele in range(len(valy)):
+    #    soma_AP0 = soma_AP0 + valx[ele]
+    #    soma_ML0 = soma_ML0 + valy[ele]
 
-    AP_barra = soma_AP0 / len(valx)
-    ML_barra = soma_ML0 / len(valy)
+    #AP_barra = soma_AP0 / len(valx)
+    #ML_barra = soma_ML0 / len(valy
+    AP_barra = sum(valx) / len(valx)
+    ML_barra = sum(valy) / len(valy)
 
     for i in range(len(valy)):
         ap = valx[i] - AP_barra
