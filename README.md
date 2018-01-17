@@ -24,7 +24,7 @@ System for instrumentation of medical examinations, wii balance board version.
 
 REQUIREMENTS
 -----------------------------------------------------------------------------------------------------------------------
-Packages - sudo apt-get install bison libbluetooth-dev python-gobject python3-tk python3-dev
+Packages - sudo apt-get install flex bison libbluetooth-dev libcwiid-dev python-gobject python3-tk python3-dev
 
 PostgreSQL - https://www.postgresql.org/download/linux/ubuntu/
 
@@ -34,7 +34,7 @@ pip - 	1. Download get-pip.py at https://bootstrap.pypa.io/get-pip.py
 		2. sudo python3 get-pip.py
 
 Python3 modules - 	sudo pip3 install awk flex pybluez xlrd xlwt xlutils matplotlib psycopg2
-					cwiid - https://github.com/abstrakraft/cwiid
+					cwiid - https://github.com/azzra/python3-wiimote
 
 POSTGRESQL CONFIGURATION
 -----------------------------------------------------------------------------------------------------------------------
