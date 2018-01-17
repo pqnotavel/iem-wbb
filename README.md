@@ -34,7 +34,7 @@ pip - 	1. Download get-pip.py at https://bootstrap.pypa.io/get-pip.py
 		2. sudo python3 get-pip.py
 
 Python3 modules - 	sudo pip3 install awk flex pybluez xlrd xlwt xlutils matplotlib psycopg2
-					cwiid - https://github.com/azzra/python3-wiimote
+			cwiid - https://github.com/azzra/python3-wiimote
 
 POSTGRESQL CONFIGURATION
 -----------------------------------------------------------------------------------------------------------------------
@@ -82,6 +82,7 @@ Step 4. Creating iem_wbb DATABASE
 		INSERT 0 1
 		INSERT 0 1
 		COPY 1
+		COMMIT
 
 EXECUTION
 -----------------------------------------------------------------------------------------------------------------------
