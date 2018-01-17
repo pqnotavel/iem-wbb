@@ -35,9 +35,69 @@ MLs = []
 pacient = {}
 WBB = {}
 
-global devices, wiimote, battery, child, relative, nt, conn, cur, modifying, is_connected, is_pacient, user_ID
+global devices, wiimote, battery, child, relative, nt, conn, cur, modifying, is_connected, is_pacient, user_ID, is_exam
 
 class Iem_wbb:
+
+    def on_save_as_activate(self, menuitem, data=None):
+        global pacient, APs, MLs, is_pacient, is_exam
+        #, cur, conn, user_ID
+        
+        path = './Pacients/' + str(pacient['ID']) + ' - ' + pacient['Nome']
+        
+        if(is_pacient and is_exam):
+            dialog = Gtk.FileChooserDialog("Salvar como", self.window,
+                Gtk.FileChooserAction.SAVE,
+                (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+
+            dialog.set_do_overwrite_confirmation(True)
+
+            self.add_filters(dialog)
+            dialog.set_current_folder(path)
+            dialog.set_current_name(pacient['Nome']+'.xls')
+
+            response = dialog.run()
+            dialog.set_filename('.xls')
+            if response == Gtk.ResponseType.OK:
+                #manArq.makeDir(path)
+                print(dialog.get_filename())
+                manArq.importXlS(pacient, APs, MLs, dialog.get_filename())
+                print("Salvo")
+                self.window.get_focus()
+            elif response == Gtk.ResponseType.CANCEL:
+                print("Cancelado")
+                self.window.get_focus()
+
+            dialog.destroy()
+        else:
+            self.message_dialog_window.set_transient_for(self.window)
+            self.message_dialog_window.format_secondary_text("Não há usuário ou exame carregado.")
+            self.message_dialog_window.show()
+
+        self.window.get_focus()
+
+    def add_filters(self, dialog):
+        filter_text = Gtk.FileFilter()
+        filter_text.set_name(".xls")
+        filter_text.add_mime_type("application/x-msexcel")
+        dialog.add_filter(filter_text)
+
+        #filter_py = Gtk.FileFilter()
+        #filter_py.set_name("Python files")
+        #filter_py.add_mime_type("text/x-python")
+        #dialog.add_filter(filter_py)
+
+        filter_any = Gtk.FileFilter()
+        filter_any.set_name("Todos os arquivos")
+        filter_any.add_pattern("*")
+        dialog.add_filter(filter_any)
+
+    def on_calibration_window_destroy(self, object, data=None):
+        print("Quit in calibration_window from menu")
+        cur.close()
+        conn.close()
+        Gtk.main_quit()
 
     def on_cancel_button_in_login_clicked(self, widget):
         print("Quit in login with cancel_button")
@@ -92,7 +152,7 @@ class Iem_wbb:
     def on_login_button_clicked(self, widget):
         global cur, user_ID
 
-        self.messagedialog1.set_transient_for(self.login_window)
+        self.message_dialog_window.set_transient_for(self.login_window)
         username = self.username_entry_in_login.get_text()
         password = self.password_entry_in_login.get_text()
 
@@ -109,12 +169,12 @@ class Iem_wbb:
         row = cur.fetchall()
 
         if(username == "" or not (user_exists)):
-            self.messagedialog1.format_secondary_text("Nome de usuário inválido, tente novamente.")
-            self.messagedialog1.show()
+            self.message_dialog_window.format_secondary_text("Nome de usuário inválido, tente novamente.")
+            self.message_dialog_window.show()
             self.username_entry_in_login.grab_focus()
         elif(password == "" or len(password) < 8 or not (row[0][0])):
-            self.messagedialog1.format_secondary_text("Senha inválida, tente novamente.")
-            self.messagedialog1.show()
+            self.message_dialog_window.format_secondary_text("Senha inválida, tente novamente.")
+            self.message_dialog_window.show()
             self.password_entry_in_login.grab_focus()
         else:
             user_ID = str(i)
@@ -139,7 +199,7 @@ class Iem_wbb:
     def on_register_user_button_clicked(self, widget):
         global cur
 
-        self.messagedialog1.set_transient_for(self.register_window)
+        self.message_dialog_window.set_transient_for(self.register_window)
         name = self.full_name_entry_in_register.get_text()
         username = self.username_entry_in_register.get_text()
         password = self.password_entry_in_register.get_text()
@@ -158,35 +218,34 @@ class Iem_wbb:
             i+=1
 
         if(name == ""):
-            self.messagedialog1.format_secondary_text("Nome inválido, tente novamente.")
-            self.messagedialog1.show()
+            self.message_dialog_window.format_secondary_text("Nome inválido, tente novamente.")
+            self.message_dialog_window.show()
             self.full_name_entry_in_register.grab_focus()
         elif(username == "" or user_exists):
-            self.messagedialog1.format_secondary_text("Nome de usuário inválido, tente novamente.")
-            self.messagedialog1.show()
+            self.message_dialog_window.format_secondary_text("Nome de usuário inválido, tente novamente.")
+            self.message_dialog_window.show()
             self.username_entry_in_register.grab_focus()
         elif(password == "" or len(password) < 8):
-            self.messagedialog1.format_secondary_text("Senha inválida, tente novamente.")
-            self.messagedialog1.show()
+            self.message_dialog_window.format_secondary_text("Senha inválida, tente novamente.")
+            self.message_dialog_window.show()
             self.password_entry_in_register.grab_focus()
         elif(password != password_check):
-            self.messagedialog1.format_secondary_text("Senhas não correspondem, tente novamente.")
-            self.messagedialog1.show()
+            self.message_dialog_window.format_secondary_text("Senhas não correspondem, tente novamente.")
+            self.message_dialog_window.show()
             self.password_check_entry_in_register.grab_focus()
         elif(email == ""):
-            self.messagedialog1.format_secondary_text("E-mail inválido, tente novamente.")
-            self.messagedialog1.show()
+            self.message_dialog_window.format_secondary_text("E-mail inválido, tente novamente.")
+            self.message_dialog_window.show()
             self.email_entry_in_register.grab_focus()
         elif(adm_password == "" or adm_password != "adm123"):
-            self.messagedialog1.format_secondary_text("Senha do administrador inválida, tente novamente.")
-            self.messagedialog1.show()
+            self.message_dialog_window.format_secondary_text("Senha do administrador inválida, tente novamente.")
+            self.message_dialog_window.show()
             self.email_entry_in_register.grab_focus()
         else:
             cur.execute("INSERT INTO users (name, username, password, email, is_adm) VALUES (%s, %s, crypt(%s, gen_salt('md5')), %s, %s);", (name, username, password, email, is_adm))
             conn.commit()
             self.register_window.hide()
             self.username_entry_in_login.grab_focus()
-
 
     def close_register_window(self, arg1, arg2):
         self.register_window.hide()
@@ -198,7 +257,7 @@ class Iem_wbb:
         self.register_window.hide()
         self.username_entry_in_login.grab_focus()
 
-    def on_window1_destroy(self, object, data=None):
+    def on_main_window_destroy(self, object, data=None):
         print("Quit with cancel")
         cur.close()
         conn.close()
@@ -207,6 +266,7 @@ class Iem_wbb:
     def on_gtk_quit_activate(self, menuitem, data=None):
         print("Quit from menu")
         self.window.hide()
+        self.calibration_window.hide()
         self.clear_all()
         self.username_entry_in_login.grab_focus()
         self.login_window.show()
@@ -324,7 +384,9 @@ class Iem_wbb:
 
     #Gets the signal of changing at exams_combobox
     def on_combo_box_set_exam_changed(self, widget):
-        global cur, pacient, APs, MLs
+        global cur, pacient, APs, MLs, is_exam
+
+        is_exam = False
 
         #Gets the active row ID at exams_combobox
         ID = self.combo_box_set_exam.get_active_id()
@@ -345,7 +407,9 @@ class Iem_wbb:
                 MLs.append(float(x))
 
     def on_load_exam_button_clicked(self, widget):
-        global APs, MLs
+        global APs, MLs, is_exam
+
+        is_exam = True
 
         max_absoluto_AP = calc.valorAbsoluto(min(APs), max(APs))
         max_absoluto_ML = calc.valorAbsoluto(min(MLs), max(MLs))
@@ -413,25 +477,25 @@ class Iem_wbb:
         self.axis2.set_xlabel('ML')
         self.canvas2.draw()
 
-    #Show newdevicewindow1
+    #Show new_device_window
     def on_new_device_activate(self, menuitem, data=None):
         print("Adicionando novo dispositivo")
         self.add_as_default_button_in_add_device.set_active(False)
-        self.newdevicewindow1.show()
+        self.new_device_window.show()
 
     def on_add_button_in_add_device_clicked(self, widget):
 
-        self.messagedialog1.set_transient_for(self.newdevicewindow1)
+        self.message_dialog_window.set_transient_for(self.new_device_window)
         name = self.device_name_in_new.get_text()
         mac = self.device_mac_in_new.get_text()
         is_default = self.add_as_default_button_in_add_device.get_active()
 
         if (name == ""):
-            self.messagedialog1.format_secondary_text("Nome inválido, tente novamente.")
-            self.messagedialog1.show()
+            self.message_dialog_window.format_secondary_text("Nome inválido, tente novamente.")
+            self.message_dialog_window.show()
         elif((mac == "") or not (iva(mac))):
-            self.messagedialog1.format_secondary_text("MAC inválido, tente novamente.")
-            self.messagedialog1.show()
+            self.message_dialog_window.format_secondary_text("MAC inválido, tente novamente.")
+            self.message_dialog_window.show()
         else:
             WBB = {'Nome':name, 'MAC':mac, 'Padrao' : is_default}
             #manArq.saveWBB(WBB)
@@ -444,7 +508,7 @@ class Iem_wbb:
             conn.commit()
             self.device_name_in_new.set_text("")
             self.device_mac_in_new.set_text("")
-            self.newdevicewindow1.hide()
+            self.new_device_window.hide()
             self.window.get_focus()
 
     #Disconnet wiimote
@@ -461,41 +525,42 @@ class Iem_wbb:
         self.window.get_focus()
         return True
 
-    def close_standupwindow1(self, arg1, arg2):
-        self.standupwindow1.hide()
+    def close_stand_up_window(self, arg1, arg2):
+        self.stand_up_window.hide()
         self.window.get_focus()
         return True
 
-    def close_searchdevicewindow1(self, arg1, arg2):
-        self.searchdevicewindow1.hide()
+    def close_search_device_window(self, arg1, arg2):
+        self.search_device_window.hide()
         self.window.get_focus()
         return True
 
-    def close_newdevicewindow1(self, arg1, arg2):
-        self.newdevicewindow1.hide()
+    def close_new_device_window(self, arg1, arg2):
+        self.new_device_window.hide()
         return True
 
-    def close_saveddeviceswindow1(self, arg1, arg2):
-        self.saveddeviceswindow1.hide()
+    def close_saved_devices_window(self, arg1, arg2):
+        self.saved_devices_window.hide()
         return True
 
-    def close_advancedgraphswindow(self, arg1, arg2):
+    def close_advanced_graphs_window(self, arg1, arg2):
         global child, relative, nt
         self.boxAdvanced.remove(child)
         self.boxAdvanced.remove(nt)
         relative.pack_start(child, expand=True, fill=True, padding=0)
-        self.advancedgraphswindow.hide()
+        self.advanced_graphs_window.hide()
         return True
 
     def on_cancel_in_saved_button_clicked(self, widget):
         print("Seleção de dispositivo cancelada")
-        self.saveddeviceswindow1.hide()
+        self.saved_devices_window.hide()
 
-        #Show searchdevicewindow1
+        #Show search_device_window
+    
     def on_search_device_activate(self, menuitem, data=None):
         self.combo_box_text_in_search.remove_all()
         self.spinner_in_search.start()
-        self.searchdevicewindow1.show()
+        self.search_device_window.show()
 
     def on_start_search_button_clicked(self, widget):
         global is_connected, devices
@@ -534,7 +599,7 @@ class Iem_wbb:
             self.image_statusbar1.set_from_file("green.png")
             self.label_statusbar1.set_text("Conectado")
             self.capture_button.set_sensitive(True)
-            self.searchdevicewindow1.hide()
+            self.search_device_window.hide()
 
     def on_save_device_in_search_clicked(self, widget):
         global devices
@@ -544,13 +609,13 @@ class Iem_wbb:
         self.device_name_in_new.set_text(devices[device_ID][1])
         self.device_mac_in_new.set_text(devices[device_ID][0])
         self.device_mac_in_new.set_sensitive(False)
-        self.newdevicewindow1.show()
+        self.new_device_window.show()
 
     def on_cancel_in_search_clicked(self, widget):
         self.connect_button_in_search.set_sensitive(False)
         self.save_device_in_search.set_sensitive(False)
         self.spinner_in_search.stop()
-        self.searchdevicewindow1.hide()
+        self.search_device_window.hide()
         self.window.get_focus()
 
     #Show saved devices window
@@ -567,7 +632,7 @@ class Iem_wbb:
             self.combo_box_in_saved.append(str(row[0]), row[1])
             if(row[2]):
                 self.combo_box_in_saved.set_active_id(str(row[0]))
-        self.saveddeviceswindow1.show()
+        self.saved_devices_window.show()
 
        #Saved devices selection
     def on_combo_box_in_saved_changed(self, widget):
@@ -608,17 +673,17 @@ class Iem_wbb:
             self.label_statusbar1.set_text("Conectado")
             self.instructions_on_saved_box.set_visible(False)
             self.connect_in_saved_button.set_sensitive(False)
-            self.saveddeviceswindow1.hide()
+            self.saved_devices_window.hide()
             self.window.get_focus()
             self.capture_button.set_sensitive(True)
 
     def on_cancel_button_in_add_device_clicked(self, widget):
         print("Adição de dispositivo cancelada")
-        self.newdevicewindow1.hide()
+        self.new_device_window.hide()
 
     def on_device_mac_activate(self, widget):
         print("Dispositivo adicionado")
-        self.newdevicewindow1.hide()
+        self.new_device_window.hide()
 
     def on_boxOriginal_button_press_event(self, widget, event):
         global child, relative, nt
@@ -630,9 +695,9 @@ class Iem_wbb:
             child = relative.get_focus_child()
             relative.remove(child)
             self.boxAdvanced.pack_start(child, expand=True, fill=True, padding=0)
-            nt = NavigationToolbar(child, self.advancedgraphswindow)
+            nt = NavigationToolbar(child, self.advanced_graphs_window)
             self.boxAdvanced.pack_start(nt, expand=False, fill=True, padding=0)
-            self.advancedgraphswindow.show()
+            self.advanced_graphs_window.show()
 
     def on_boxProcessado_button_press_event(self, widget, event):
         global child, relative, nt
@@ -644,9 +709,9 @@ class Iem_wbb:
             child = relative.get_focus_child()
             relative.remove(child)
             self.boxAdvanced.pack_start(child, expand=True, fill=True, padding=0)
-            nt = NavigationToolbar(child, self.advancedgraphswindow)
+            nt = NavigationToolbar(child, self.advanced_graphs_window)
             self.boxAdvanced.pack_start(nt, expand=False, fill=True, padding=0)
-            self.advancedgraphswindow.show()
+            self.advanced_graphs_window.show()
 
     def on_boxFourier_button_press_event(self, widget, event):
         global child, relative, nt
@@ -658,15 +723,15 @@ class Iem_wbb:
             child = relative.get_focus_child()
             relative.remove(child)
             self.boxAdvanced.pack_start(child, expand=True, fill=True, padding=0)
-            nt = NavigationToolbar(child, self.advancedgraphswindow)
+            nt = NavigationToolbar(child, self.advanced_graphs_window)
             self.boxAdvanced.pack_start(nt, expand=False, fill=True, padding=0)
-            self.advancedgraphswindow.show()
+            self.advanced_graphs_window.show()
 
     def on_cancel_in_standup_clicked(self, widget):
-        self.standupwindow1.hide()
+        self.stand_up_window.hide()
 
     def on_messagedialog1_close_clicked(self, widget):
-        self.messagedialog1.hide()
+        self.message_dialog_window.hide()
 
     def on_savepacient_button_clicked(self, widget):
         global pacient, cur, conn, modifying, is_pacient
@@ -679,20 +744,20 @@ class Iem_wbb:
         height = self.height_entry.get_text()
 
         if (name == ""):
-            self.messagedialog1.format_secondary_text("Nome inválido, tente novamente.")
-            self.messagedialog1.show()
+            self.message_dialog_window.format_secondary_text("Nome inválido, tente novamente.")
+            self.message_dialog_window.show()
             self.name_entry.grab_focus()
         elif(sex == ""):
-            self.messagedialog1.format_secondary_text("Sexo inválido, tente novamente.")
-            self.messagedialog1.show()
+            self.message_dialog_window.format_secondary_text("Sexo inválido, tente novamente.")
+            self.message_dialog_window.show()
             self.sex_combobox.grab_focus()
         elif(age == ""):
-            self.messagedialog1.format_secondary_text("Idade inválida, tente novamente.")
-            self.messagedialog1.show()
+            self.message_dialog_window.format_secondary_text("Idade inválida, tente novamente.")
+            self.message_dialog_window.show()
             self.age_entry.grab_focus()
         elif(height == ""):
-            self.messagedialog1.format_secondary_text("Altura inválida, tente novamente.")
-            self.messagedialog1.show()
+            self.message_dialog_window.format_secondary_text("Altura inválida, tente novamente.")
+            self.message_dialog_window.show()
             self.height_entry.grab_focus()
         else:
             height = height.replace(',', '.', 1)
@@ -760,17 +825,17 @@ class Iem_wbb:
         global is_connected, is_pacient
 
         if(not is_pacient):
-            self.messagedialog1.format_secondary_text("É preciso cadastrar ou carregar um paciente para realizar o processo de captura.")
-            self.messagedialog1.show()
+            self.message_dialog_window.format_secondary_text("É preciso cadastrar ou carregar um paciente para realizar o processo de captura.")
+            self.message_dialog_window.show()
         elif(not is_connected):
-            self.messagedialog1.format_secondary_text("É preciso conectar a um dispositivo para realizar o processo de captura..")
-            self.messagedialog1.show()
+            self.message_dialog_window.format_secondary_text("É preciso conectar a um dispositivo para realizar o processo de captura..")
+            self.message_dialog_window.show()
         else:
             self.progressbar1.set_fraction(0)
-            self.standupwindow1.show()
+            self.stand_up_window.show()
 
     def on_start_capture_button_clicked(self, widget):
-        self.standupwindow1.hide()
+        self.stand_up_window.hide()
         self.axis.clear()
         self.axis.set_ylabel('AP')
         self.axis.set_xlabel('ML')
@@ -891,11 +956,12 @@ class Iem_wbb:
         self.save_exam_button.set_sensitive(False)
 
     def __init__(self):
-        global modifying, is_connected, is_pacient
+        global modifying, is_connected, is_pacient, is_exam
 
-        modifying = False
-        is_connected = False
         is_pacient = False
+        is_exam = False
+        is_connected = False
+        modifying = False
 
         self.gladeFile = "iem-wbb.glade"
         self.builder = Gtk.Builder()
@@ -910,26 +976,29 @@ class Iem_wbb:
         self.boxFourier = go("boxFourier")
         self.boxAdvanced = go("boxAdvanced")
         self.instructions_on_saved_box = go("instructions_on_saved_box")
+        self.box_calibration = go("box_calibration")
 
         #Windows
         self.login_window = go("login_window")
         self.register_window = go("register_window")
-        self.window = go("window1")
-        self.newdevicewindow1 = go("newdevicewindow1")
-        self.messagedialog1 = go("messagedialog1")
-        self.standupwindow1 = go("standupwindow1")
-        self.searchdevicewindow1 = go("searchdevicewindow1")
-        self.saveddeviceswindow1 = go("saveddeviceswindow1")
-        self.advancedgraphswindow = go("advancedgraphswindow")
+        self.window = go("main_window")
+        #self.window.fullscreen()
+        self.new_device_window = go("new_device_window")
+        self.message_dialog_window = go("message_dialog_window")
+        self.stand_up_window = go("stand_up_window")
+        self.search_device_window = go("search_device_window")
+        self.saved_devices_window = go("saved_devices_window")
+        self.advanced_graphs_window = go("advanced_graphs_window")
         self.load_pacient_window = go("load_pacient_window")
+        self.calibration_window = go("calibration_window")
 
         #Delete-events
         self.register_window.connect("delete-event", self.close_register_window)
-        self.searchdevicewindow1.connect("delete-event", self.close_searchdevicewindow1)
-        self.newdevicewindow1.connect("delete-event", self.close_newdevicewindow1)
-        self.standupwindow1.connect("delete-event", self.close_standupwindow1)
-        self.saveddeviceswindow1.connect("delete-event", self.close_saveddeviceswindow1)
-        self.advancedgraphswindow.connect("delete-event", self.close_advancedgraphswindow)
+        self.search_device_window.connect("delete-event", self.close_search_device_window)
+        self.new_device_window.connect("delete-event", self.close_new_device_window)
+        self.stand_up_window.connect("delete-event", self.close_stand_up_window)
+        self.saved_devices_window.connect("delete-event", self.close_saved_devices_window)
+        self.advanced_graphs_window.connect("delete-event", self.close_advanced_graphs_window)
         self.load_pacient_window.connect("delete-event", self.close_load_pacient_window)
 
         #Images
@@ -968,6 +1037,7 @@ class Iem_wbb:
         #Entrys
         self.username_entry_in_login = go("username_entry_in_login")
         self.password_entry_in_login = go("password_entry_in_login")
+        self.password_entry_in_login.set_activates_default(True)
         self.full_name_entry_in_register = go("full_name_entry_in_register")
         self.username_entry_in_register = go("username_entry_in_register")
         self.password_entry_in_register = go("password_entry_in_register")
@@ -983,6 +1053,7 @@ class Iem_wbb:
         self.device_name_in_new = go("device_name_in_new")
         self.device_mac_in_new = go("device_mac_in_new")
         self.mac_entry_in_saved = go("mac_entry_in_saved")
+        self.file_name_entry = go("file_name_entry")
 
         self.entry_Mdist = go("mdist_")
         self.entry_Rdist_AP = go("rdist_ap")
@@ -1035,7 +1106,22 @@ class Iem_wbb:
         self.canvas3 = FigureCanvas(self.fig3)
         self.boxFourier.pack_start(self.canvas3, expand=True, fill=True, padding=0)
 
-        self.login_window.show()
+        '''Calibration Graph'''
+        self.fig4 = Figure(dpi=50)
+        self.fig4.suptitle('Calibração', fontsize=20)
+        self.axis4 = self.fig4.add_subplot(111)
+        self.axis4.set_ylabel('Y', fontsize = 16)
+        self.axis4.set_xlabel('X', fontsize = 16)
+        self.axis4.set_xlim(-22.25, 22.25)
+        self.axis4.set_ylim(-12.65, 12.65)
+        self.axis4.axhline(0, color='grey')
+        self.axis4.axvline(0, color='grey')
+        self.canvas4 = FigureCanvas(self.fig4)
+        self.box_calibration.pack_start(self.canvas4, expand=True, fill=True, padding=0)
+
+        #self.login_window.show_all()
+        self.window.show_all()
+        #self.calibration_window.show_all()
 
 if __name__ == "__main__":
     global conn, cur

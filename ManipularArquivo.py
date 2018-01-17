@@ -155,7 +155,7 @@ def importXlS(dict_paciente, APs, MLs, path):
         worksheetnew.write(linha +1, 1, valor)
 
     #-------salvar a data------
-    workbook.save(path+'/'+dict_paciente['Nome']+'.xls')
+    workbook.save(path)
 
 def getID():
     IDpaciente = open('ID.txt', mode='r+')
