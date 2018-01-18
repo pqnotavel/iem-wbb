@@ -43,10 +43,12 @@ class Iem_wbb:
         global pacient, APs, MLs, is_pacient, is_exam
         #, cur, conn, user_ID
         
-        path = './Pacients/' + str(pacient['ID']) + ' - ' + pacient['Nome']
+        path = str(pacient['ID']) + ' - ' + pacient['Nome']
         
         if(is_pacient and is_exam):
-            dialog = Gtk.FileChooserDialog("Salvar como", self.window,
+            manArq.importXlS(pacient, APs, MLs, path)
+            print("Salvo")
+            '''dialog = Gtk.FileChooserDialog("Salvar como", self.window,
                 Gtk.FileChooserAction.SAVE,
                 (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
                 Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
@@ -69,7 +71,7 @@ class Iem_wbb:
                 print("Cancelado")
                 self.window.get_focus()
 
-            dialog.destroy()
+            dialog.destroy()'''
         else:
             self.message_dialog_window.set_transient_for(self.window)
             self.message_dialog_window.format_secondary_text("Não há usuário ou exame carregado.")
@@ -1119,8 +1121,8 @@ class Iem_wbb:
         self.canvas4 = FigureCanvas(self.fig4)
         self.box_calibration.pack_start(self.canvas4, expand=True, fill=True, padding=0)
 
-        #self.login_window.show_all()
-        self.window.show_all()
+        self.login_window.show_all()
+        #self.window.show_all()
         #self.calibration_window.show_all()
 
 if __name__ == "__main__":
