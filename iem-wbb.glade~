@@ -1280,6 +1280,10 @@
                       <object class="GtkGrid" id="grid1">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="valign">start</property>
+                        <property name="margin_left">5</property>
+                        <property name="margin_right">5</property>
+                        <property name="margin_top">5</property>
                         <property name="row_spacing">10</property>
                         <child>
                           <object class="GtkLabel" id="label_mdist">
@@ -1742,13 +1746,12 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="margin_left">5</property>
-                <property name="spacing">5</property>
                 <child>
                   <object class="GtkImage" id="image_statusbar1">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="margin_right">5</property>
-                    <property name="icon_name">bluetooth-disabled-symbolic</property>
+                    <property name="pixbuf">red.png</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>

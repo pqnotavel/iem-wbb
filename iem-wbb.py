@@ -16,7 +16,7 @@ from gi.repository import Gdk
 #from gi.repository import GObject
 
 import calculos as calc
-import conexao as conect
+import conexao as connect
 import ManipularArquivo as manArq
 
 from matplotlib.figure import Figure
@@ -28,27 +28,63 @@ from matplotlib.backends.backend_gtk3 import NavigationToolbar2GTK3 as Navigatio
 import psycopg2
 
 from bluetooth.btcommon import is_valid_address as iva
-from bluetooth.btcommon import is_valid_address as iva
 
 APs = []
 MLs = []
 pacient = {}
 WBB = {}
 
-global devices, wiimote, battery, child, relative, nt, conn, cur, modifying, is_connected, is_pacient, user_ID, is_exam
+calibration_images = ["test_cal_21.png", "test_cal_22.png", "test_cal_23.png", "test_cal_24.png", "test_cal_25.png"]
+current_image_id = 0
+
+global devices, wiimote, battery, child, relative, nt, conn, cur, is_connected, is_pacient, user_ID, is_exam
 
 class Iem_wbb:
+    
+    def on_continue_button_clicked(self, widget):
+        self.calibration_equipment_window.hide()
+        self.calibration_window.show_all()
+
+    def on_start_calibration_button_clicked(self, widget):
+        global calibration_images, current_image_id
+
+        if (current_image_id == 0):
+            self.start_calibration_button.set_sensitive(False)
+
+        ID = current_image_id % len(calibration_images)
+        if (ID == 0):
+            self.entry_x1.set_sensitive(True)
+            self.entry_x2.set_sensitive(False)
+            self.entry_x3.set_sensitive(False)
+            self.entry_x4.set_sensitive(False)
+            self.entry_x5.set_sensitive(False)
+            self.entry_y1.set_sensitive(True)
+            self.entry_y2.set_sensitive(False)
+            self.entry_y3.set_sensitive(False)
+            self.entry_y4.set_sensitive(False)
+            self.entry_y5.set_sensitive(False)
+            self.entry_peso1.set_sensitive(True)
+            self.entry_peso2.set_sensitive(False)
+            self.entry_peso3.set_sensitive(False)
+            self.entry_peso4.set_sensitive(False)
+            self.entry_peso5.set_sensitive(False)
+
+        self.calibration_image.set_from_file(calibration_images[ID])
+        self.calibration_image.set_sensitive(True)
+        current_image_id = current_image_id + 1
+        text = "Ajuste o peso de 5kg no ponto %d" % (ID+1)
+        self.calibration_label.set_text(text)
 
     def on_save_as_activate(self, menuitem, data=None):
-        global pacient, APs, MLs, is_pacient, is_exam
+        global APs, MLs, is_pacient, is_exam
         #, cur, conn, user_ID
         
-        path = str(pacient['ID']) + ' - ' + pacient['Nome']
+        path = str('./Pacients/' + self.pacient['ID']) + ' - ' + self.pacient['Nome']
         
         if(is_pacient and is_exam):
-            manArq.importXlS(pacient, APs, MLs, path)
-            print("Salvo")
-            '''dialog = Gtk.FileChooserDialog("Salvar como", self.window,
+            '''manArq.importXlS(pacient, APs, MLs, path)
+                                                print("Salvo")'''
+            dialog = Gtk.FileChooserDialog("Salvar como", self.main_window,
                 Gtk.FileChooserAction.SAVE,
                 (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
                 Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
@@ -57,7 +93,7 @@ class Iem_wbb:
 
             self.add_filters(dialog)
             dialog.set_current_folder(path)
-            dialog.set_current_name(pacient['Nome']+'.xls')
+            dialog.set_current_name(self.pacient['Nome']+'.xls')
 
             response = dialog.run()
             dialog.set_filename('.xls')
@@ -66,18 +102,18 @@ class Iem_wbb:
                 print(dialog.get_filename())
                 manArq.importXlS(pacient, APs, MLs, dialog.get_filename())
                 print("Salvo")
-                self.window.get_focus()
+                self.main_window.get_focus()
             elif response == Gtk.ResponseType.CANCEL:
                 print("Cancelado")
-                self.window.get_focus()
+                self.main_window.get_focus()
 
-            dialog.destroy()'''
+            dialog.destroy()
         else:
-            self.message_dialog_window.set_transient_for(self.window)
+            self.message_dialog_window.set_transient_for(self.main_window)
             self.message_dialog_window.format_secondary_text("Não há usuário ou exame carregado.")
             self.message_dialog_window.show()
 
-        self.window.get_focus()
+        self.main_window.get_focus()
 
     def add_filters(self, dialog):
         filter_text = Gtk.FileFilter()
@@ -114,9 +150,9 @@ class Iem_wbb:
         Gtk.main_quit()
 
     def clear_all(self):
-        global is_pacient, pacient
+        global is_pacient
 
-        pacient = {}
+        self.pacient = {}
         is_pacient = False
 
         self.ID_entry.set_text('')
@@ -182,20 +218,37 @@ class Iem_wbb:
             user_ID = str(i)
             print("Login as " + username)
             self.login_window.hide()
-            self.window.set_title("IEM_WBB" + " - " + username)
-            self.window.show_all()
+            self.main_window.set_title("IEM_WBB" + " - " + username)
+            self.main_window.show_all()
             self.progressbar1.set_visible(False)
             self.username_entry_in_login.set_text("")
             self.password_entry_in_login.set_text("")
 
     def on_register_new_user_button_clicked(self, widget):
         print("Register Window")
+
+        #Window
+        self.register_window = self.builder.get_object("register_window")
+
+        #Entrys
+        self.full_name_entry_in_register = self.builder.get_object("full_name_entry_in_register")
+        self.username_entry_in_register = self.builder.get_object("username_entry_in_register")
+        self.password_entry_in_register = self.builder.get_object("password_entry_in_register")
+        self.password_check_entry_in_register = self.builder.get_object("password_check_entry_in_register")
+        self.email_entry_in_register = self.builder.get_object("email_entry_in_register")
+        self.adm_password_entry_in_register = self.builder.get_object("adm_password_entry_in_register")
+        
+        #Button
+        self.is_adm_button_in_register = self.builder.get_object("is_adm_button_in_register")
+
         self.full_name_entry_in_register.set_text("")
         self.username_entry_in_register.set_text("")
         self.password_entry_in_register.set_text("")
         self.password_check_entry_in_register.set_text("")
         self.email_entry_in_register.set_text("")
         self.adm_password_entry_in_register.set_text("")
+        
+        self.full_name_entry_in_register.grab_focus()
         self.register_window.show()
 
     def on_register_user_button_clicked(self, widget):
@@ -267,8 +320,8 @@ class Iem_wbb:
 
     def on_gtk_quit_activate(self, menuitem, data=None):
         print("Quit from menu")
-        self.window.hide()
-        self.calibration_window.hide()
+        self.main_window.hide()
+        #self.calibration_window.hide()
         self.clear_all()
         self.username_entry_in_login.grab_focus()
         self.login_window.show()
@@ -295,7 +348,7 @@ class Iem_wbb:
 
     #Gets the signal of changing at pacients_combobox
     def on_combobox_in_load_pacient_changed(self, widget):
-        global cur, pacient
+        global cur
 
         self.pacient_label_in_load.set_text("")
 
@@ -325,11 +378,10 @@ class Iem_wbb:
                 '\n' + 'Peso: ' + weight +
                 '\n' + 'IMC: ' + imc)
 
-            pacient = {'Nome': name, 'ID': ID, 'Sexo': sex, 'Idade': age, 'Altura': height, 'Peso' : weight, 'IMC': imc}
-
+            self.pacient = {'Nome': name, 'ID': ID, 'Sexo': sex, 'Idade': age, 'Altura': height, 'Peso' : weight, 'IMC': imc}
 
     def on_load_pacient_button_clicked(self, widget):
-        global pacient, cur, is_pacient
+        global cur, is_pacient
 
         is_pacient = True
 
@@ -344,18 +396,19 @@ class Iem_wbb:
         self.axis2.set_xlabel('ML')
 
         #Fill the main window with pacient data
-        self.ID_entry.set_text(pacient['ID'])
-        self.name_entry.set_text(pacient['Nome'])
-        self.age_entry.set_text(pacient['Idade'])
-        self.height_entry.set_text(pacient['Altura'])
-        if(pacient['Sexo'] == 'M'):
+        self.ID_entry.set_text(self.pacient['ID'])
+        self.name_entry.set_text(self.pacient['Nome'])
+        self.age_entry.set_text(self.pacient['Idade'])
+        self.height_entry.set_text(self.pacient['Altura'])
+        if(self.pacient['Sexo'] == 'M'):
             self.sex_combobox.set_active_id('0')
-        elif(pacient['Sexo'] == 'F'):
+        elif(self.pacient['Sexo'] == 'F'):
             self.sex_combobox.set_active_id('1')
         else:
             self.sex_combobox.set_active_id('2')
-        self.weight.set_text(pacient['Peso'])
-        self.imc.set_text(pacient['IMC'])
+
+        self.weight.set_text(self.pacient['Peso'])
+        self.imc.set_text(self.pacient['IMC'])
         self.sex_combobox.set_sensitive(False)
         self.name_entry.set_sensitive(False)
         self.age_entry.set_sensitive(False)
@@ -366,7 +419,7 @@ class Iem_wbb:
         self.capture_button.set_sensitive(True)
 
         #Fills the exams_combobox with the dates of current pacient exams
-        cur.execute("SELECT * FROM exams WHERE pac_id = (%s)", (pacient['ID']))
+        cur.execute("SELECT * FROM exams WHERE pac_id = (%s)", (self.pacient['ID']))
         rows = cur.fetchall()
         i=1
         for row in rows:
@@ -386,7 +439,7 @@ class Iem_wbb:
 
     #Gets the signal of changing at exams_combobox
     def on_combo_box_set_exam_changed(self, widget):
-        global cur, pacient, APs, MLs, is_exam
+        global cur, APs, MLs, is_exam
 
         is_exam = False
 
@@ -511,30 +564,30 @@ class Iem_wbb:
             self.device_name_in_new.set_text("")
             self.device_mac_in_new.set_text("")
             self.new_device_window.hide()
-            self.window.get_focus()
+            self.main_window.get_focus()
 
     #Disconnet wiimote
     def on_disconnect_activate(self, menuitem, data=None):
         global wiimote, is_connected
-        conect.closeConection(wiimote)
+        connect.closeConnection(wiimote)
         is_connected = False
         self.batterylabel.set_text("Bateria:")
-        self.image_statusbar1.set_from_file("red.png")
-        self.label_statusbar1.set_text("Não conectado")
+        self.image_statusbar1.set_from_icon_name("bluetooth-disabled-symbolic", set_from_icon_name)
+        self.label_statusbar1.set_text("Não connectado")
 
     def close_load_pacient_window(self, arg1, arg2):
         self.load_pacient_window.hide()
-        self.window.get_focus()
+        self.main_window.get_focus()
         return True
 
     def close_stand_up_window(self, arg1, arg2):
         self.stand_up_window.hide()
-        self.window.get_focus()
+        self.main_window.get_focus()
         return True
 
     def close_search_device_window(self, arg1, arg2):
         self.search_device_window.hide()
-        self.window.get_focus()
+        self.main_window.get_focus()
         return True
 
     def close_new_device_window(self, arg1, arg2):
@@ -570,12 +623,12 @@ class Iem_wbb:
         self.batterylabel.set_text("Bateria:")
         is_connected = False
 
-        self.image_statusbar1.set_from_file("red.png")
-        self.label_statusbar1.set_text("Não conectado")
+        self.image_statusbar1.set_from_icon_name("bluetooth-disabled-symbolic", set_from_icon_name)
+        self.label_statusbar1.set_text("Não connectado")
 
         print("Buscando novo dispositivo")
 
-        devices = conect.searchWBB()
+        devices = connect.searchWBB()
 
         self.combo_box_text_in_search.remove_all()
         device_ID = 0
@@ -592,14 +645,14 @@ class Iem_wbb:
 
         device_ID = int(self.combo_box_text_in_search.get_active_id())
 
-        wiimote, battery = conect.connectToWBB(devices[device_ID][0])
+        wiimote, battery = connect.connectToWBB(devices[device_ID][0])
 
         if(wiimote):
             is_connected = True
             self.batterylabel.set_text("Bateria: " + str(int(100*battery))+"%")
             self.batterylabel.set_visible(True)
-            self.image_statusbar1.set_from_file("green.png")
-            self.label_statusbar1.set_text("Conectado")
+            self.image_statusbar1.set_from_icon_name("bluetooth-paired", set_from_icon_name)
+            self.label_statusbar1.set_text("connectado")
             self.capture_button.set_sensitive(True)
             self.search_device_window.hide()
 
@@ -618,7 +671,7 @@ class Iem_wbb:
         self.save_device_in_search.set_sensitive(False)
         self.spinner_in_search.stop()
         self.search_device_window.hide()
-        self.window.get_focus()
+        self.main_window.get_focus()
 
     #Show saved devices window
     def on_connect_to_saved_device_activate(self, menuitem, data=None):
@@ -636,7 +689,7 @@ class Iem_wbb:
                 self.combo_box_in_saved.set_active_id(str(row[0]))
         self.saved_devices_window.show()
 
-       #Saved devices selection
+    #Saved devices selection
     def on_combo_box_in_saved_changed(self, widget):
         global cur
 
@@ -657,13 +710,13 @@ class Iem_wbb:
         global wiimote, battery, is_connected
 
         self.batterylabel.set_text("Bateria:")
-        self.image_statusbar1.set_from_file("red.png")
-        self.label_statusbar1.set_text("Não conectado")
+        self.image_statusbar1.set_from_icon_name("bluetooth-disabled-symbolic", 8)
+        self.label_statusbar1.set_text("Não connectado")
 
         MAC = self.mac_entry_in_saved.get_text()
         print (MAC)
 
-        wiimote, battery = conect.connectToWBB(MAC)
+        wiimote, battery = connect.connectToWBB(MAC)
 
         if(wiimote):
             is_connected = True
@@ -671,12 +724,12 @@ class Iem_wbb:
             self.batterylabel.set_text("Bateria: " + str(int(100*battery))+"%")
             self.batterylabel.set_visible(True)
 
-            self.image_statusbar1.set_from_file("green.png")
-            self.label_statusbar1.set_text("Conectado")
+            self.image_statusbar1.set_from_icon_name("bluetooth-paired", 8)
+            self.label_statusbar1.set_text("connectado")
             self.instructions_on_saved_box.set_visible(False)
             self.connect_in_saved_button.set_sensitive(False)
             self.saved_devices_window.hide()
-            self.window.get_focus()
+            self.main_window.get_focus()
             self.capture_button.set_sensitive(True)
 
     def on_cancel_button_in_add_device_clicked(self, widget):
@@ -736,7 +789,7 @@ class Iem_wbb:
         self.message_dialog_window.hide()
 
     def on_savepacient_button_clicked(self, widget):
-        global pacient, cur, conn, modifying, is_pacient
+        global cur, conn, is_pacient
 
         is_pacient = False
 
@@ -775,7 +828,7 @@ class Iem_wbb:
             self.height_entry.set_sensitive(False)
             self.ID_entry.set_sensitive(False)
             self.capture_button.set_sensitive(True)
-            if not modifying:
+            if not self.modifying:
                 cur.execute("INSERT INTO pacients (name, sex, age, height) VALUES (%s, %s, %s, %s);",(name, sex, age, height))
                 conn.commit()
                 cur.execute("SELECT * FROM pacients ORDER BY id;")
@@ -786,7 +839,7 @@ class Iem_wbb:
                 cur.execute("SELECT * FROM pacients_id_seq;")
                 row = cur.fetchall()
                 ID = row[0][1]
-                pacient = {'Nome': name, 'ID': ID, 'Sexo': sex, 'Idade': age, 'Altura': height}
+                self.pacient = {'Nome': name, 'ID': ID, 'Sexo': sex, 'Idade': age, 'Altura': height}
                 self.ID_entry.set_text(str(ID))
                 #manArq.makeDir(str(ID) + ' - ' + name)
                 #path = str(pacient['ID']) + ' - ' + pacient['Nome']
@@ -800,18 +853,17 @@ class Iem_wbb:
                 #manArq.renameDir(pathOld, pathNew)
                 cur.execute("UPDATE pacients SET sex = (%s), age = (%s), height = (%s), name = (%s) WHERE id = (%s);", (sex, age, height, name, pacient['ID']))
                 conn.commit()
-                pacient['Nome'] = name
-                pacient['Sexo'] = sex
-                pacient['Idade'] = age
-                pacient['Altura'] = height
+                self.pacient['Nome'] = name
+                self.pacient['Sexo'] = sex
+                self.pacient['Idade'] = age
+                self.pacient['Altura'] = height
                 #manArq.savePacient(pacient, str(pacient['ID']) + ' - ' + name)
             print("Paciente salvo")
             self.changepacientbutton.set_sensitive(True)
             is_pacient = True
 
     def on_changepacientbutton_clicked(self, widget):
-        global modifying
-        modifying = True
+        self.modifying = True
         self.savepacient_button.set_sensitive(True)
         self.name_entry.set_editable(True)
         self.age_entry.set_editable(True)
@@ -830,7 +882,7 @@ class Iem_wbb:
             self.message_dialog_window.format_secondary_text("É preciso cadastrar ou carregar um paciente para realizar o processo de captura.")
             self.message_dialog_window.show()
         elif(not is_connected):
-            self.message_dialog_window.format_secondary_text("É preciso conectar a um dispositivo para realizar o processo de captura..")
+            self.message_dialog_window.format_secondary_text("É preciso connectar a um dispositivo para realizar o processo de captura..")
             self.message_dialog_window.show()
         else:
             self.progressbar1.set_fraction(0)
@@ -850,18 +902,18 @@ class Iem_wbb:
 
         self.progressbar1.set_visible(True)
 
-        global APs, MLs, pacient, wiimote, cur, conn
+        global APs, MLs, wiimote, cur, conn
 
         balance, weights, pontos = calc.calcPontos(self, wiimote)
         midWeight = calc.calcPesoMedio(weights)
-        imc = calc.calcIMC(midWeight, float(pacient['Altura']))
+        imc = calc.calcIMC(midWeight, float(self.pacient['Altura']))
 
         self.points_entry.set_text(str(pontos))
 
-        pacient['Peso'] = round(midWeight, 2)
-        pacient['IMC'] = round(imc,1)
+        self.pacient['Peso'] = round(midWeight, 2)
+        self.pacient['IMC'] = round(imc,1)
 
-        cur.execute("UPDATE pacients SET weight = (%s), imc = (%s) WHERE name = (%s);", (pacient['Peso'], pacient['IMC'], pacient['Nome']))
+        cur.execute("UPDATE pacients SET weight = (%s), imc = (%s) WHERE name = (%s);", (self.pacient['Peso'], self.pacient['IMC'], self.pacient['Nome']))
         conn.commit()
 
         APs = []
@@ -944,8 +996,8 @@ class Iem_wbb:
         self.save_exam_button.set_sensitive(True)
 
     def on_save_exam_button_clicked(self, widget):
-        global pacient, APs, MLs, cur, conn, user_ID
-        cur.execute("INSERT INTO exams (APs, MLs, pac_id, usr_id) VALUES (%s, %s, %s, %s)", (APs, MLs, pacient['ID'], user_ID))
+        global APs, MLs, cur, conn, user_ID
+        cur.execute("INSERT INTO exams (APs, MLs, pac_id, usr_id) VALUES (%s, %s, %s, %s)", (APs, MLs, self.pacient['ID'], user_ID))
         conn.commit()
         #path = 'Pacients/' + str(pacient['ID']) + ' - ' + pacient['Nome']
         #self.fig.canvas.print_png(str(path + '/grafico original'))
@@ -958,129 +1010,76 @@ class Iem_wbb:
         self.save_exam_button.set_sensitive(False)
 
     def __init__(self):
-        global modifying, is_connected, is_pacient, is_exam
+        global is_connected, is_pacient, is_exam
 
         is_pacient = False
         is_exam = False
         is_connected = False
-        modifying = False
+        self.modifying = False
+
+        self.pacient = {}
 
         self.gladeFile = "iem-wbb.glade"
         self.builder = Gtk.Builder()
         self.builder.add_from_file(self.gladeFile)
-        go = self.builder.get_object
         self.builder.connect_signals(self)
 
-        #Boxes
-        self.vbox1 = go("vbox1")
-        self.boxOriginal = go("boxOriginal")
-        self.boxProcessado = go("boxProcessado")
-        self.boxFourier = go("boxFourier")
-        self.boxAdvanced = go("boxAdvanced")
-        self.instructions_on_saved_box = go("instructions_on_saved_box")
-        self.box_calibration = go("box_calibration")
-
         #Windows
-        self.login_window = go("login_window")
-        self.register_window = go("register_window")
-        self.window = go("main_window")
-        #self.window.fullscreen()
-        self.new_device_window = go("new_device_window")
-        self.message_dialog_window = go("message_dialog_window")
-        self.stand_up_window = go("stand_up_window")
-        self.search_device_window = go("search_device_window")
-        self.saved_devices_window = go("saved_devices_window")
-        self.advanced_graphs_window = go("advanced_graphs_window")
-        self.load_pacient_window = go("load_pacient_window")
-        self.calibration_window = go("calibration_window")
+        self.login_window = self.builder.get_object("login_window")
+        self.message_dialog_window = self.builder.get_object("message_dialog_window")
+        self.main_window = None
+        self.main_window = self.builder.get_object("main_window")
+        self.main_window.maximize()
+        self.advanced_graphs_window = self.builder.get_object("advanced_graphs_window")
 
-        #Delete-events
-        self.register_window.connect("delete-event", self.close_register_window)
-        self.search_device_window.connect("delete-event", self.close_search_device_window)
-        self.new_device_window.connect("delete-event", self.close_new_device_window)
-        self.stand_up_window.connect("delete-event", self.close_stand_up_window)
-        self.saved_devices_window.connect("delete-event", self.close_saved_devices_window)
-        self.advanced_graphs_window.connect("delete-event", self.close_advanced_graphs_window)
-        self.load_pacient_window.connect("delete-event", self.close_load_pacient_window)
-
-        #Images
-        self.image_statusbar1 = go("image_statusbar1")
-        self.image_in_saved = go("image_in_saved")
-
-        #Grids
-        self.grid_graphs = go("grid_graphs")
-
-        #Separators
-        self.separator_in_saved_devices = go("separator_in_saved_devices")
+        #Boxes
+        self.boxOriginal = self.builder.get_object("boxOriginal")
+        self.boxProcessado = self.builder.get_object("boxProcessado")
+        self.boxFourier = self.builder.get_object("boxFourier")
+        self.boxAdvanced = self.builder.get_object("boxAdvanced")
+        
+        #Image
+        self.image_statusbar1 = self.builder.get_object("image_statusbar1")
 
         #Buttons
-        self.login_button = go("login_button")
-        self.capture_button = go("capture_button")
-        self.savepacient_button = go("savepacient_button")
-        self.changepacientbutton = go("changepacientbutton")
-        self.start_capture_button = go("start_capture_button")
-        self.save_device_in_search = go("save_device_in_search")
-        self.connect_button_in_search = go("connect_button_in_search")
-        self.connect_in_saved_button = go("connect_in_saved_button")
-        self.save_exam_button = go("save_exam_button")
-        self.load_exam_button = go("load_exam_button")
-        self.add_as_default_button_in_add_device = go("add_as_default_button_in_add_device")
-        self.is_adm_button_in_register = go("is_adm_button_in_register")
-
-        #Spinners
-        self.spinner_in_search = go("spinner_in_search")
-
+        self.capture_button = self.builder.get_object("capture_button")
+        self.savepacient_button = self.builder.get_object("savepacient_button")
+        self.changepacientbutton = self.builder.get_object("changepacientbutton")
+        self.save_exam_button = self.builder.get_object("save_exam_button")
+        self.load_exam_button = self.builder.get_object("load_exam_button")
+        
         #Labels
-        self.label_statusbar1 = go("label_statusbar1")
-        self.batterylabel = go("batterylabel")
-        self.instructionslabel_in_saved = go("instructionslabel_in_saved")
-        self.pacient_label_in_load = go("pacient_label_in_load")
+        self.label_statusbar1 = self.builder.get_object("label_statusbar1")
+        self.batterylabel = self.builder.get_object("batterylabel")
 
         #Entrys
-        self.username_entry_in_login = go("username_entry_in_login")
-        self.password_entry_in_login = go("password_entry_in_login")
-        self.password_entry_in_login.set_activates_default(True)
-        self.full_name_entry_in_register = go("full_name_entry_in_register")
-        self.username_entry_in_register = go("username_entry_in_register")
-        self.password_entry_in_register = go("password_entry_in_register")
-        self.password_check_entry_in_register = go("password_check_entry_in_register")
-        self.email_entry_in_register = go("email_entry_in_register")
-        self.adm_password_entry_in_register = go("adm_password_entry_in_register")
-        self.name_entry = go("name_entry")
-        self.age_entry = go("age_entry")
-        self.height_entry = go("height_entry")
-        self.ID_entry = go("ID_entry")
-        self.weight = go("weight")
-        self.imc = go("imc")
-        self.device_name_in_new = go("device_name_in_new")
-        self.device_mac_in_new = go("device_mac_in_new")
-        self.mac_entry_in_saved = go("mac_entry_in_saved")
-        self.file_name_entry = go("file_name_entry")
+        self.name_entry = self.builder.get_object("name_entry")
+        self.age_entry = self.builder.get_object("age_entry")
+        self.height_entry = self.builder.get_object("height_entry")
+        self.ID_entry = self.builder.get_object("ID_entry")
+        self.weight = self.builder.get_object("weight")
+        self.imc = self.builder.get_object("imc")
+        self.entry_Mdist = self.builder.get_object("mdist_")
+        self.entry_Rdist_AP = self.builder.get_object("rdist_ap")
+        self.entry_Rdist_ML = self.builder.get_object("rdist_ml")
+        self.entry_Rdist_TOTAL = self.builder.get_object("rdist_t")
+        self.entry_TOTEX_AP = self.builder.get_object("totex_ap")
+        self.entry_TOTEX_ML = self.builder.get_object("totex_ml")
+        self.entry_TOTEX_TOTAL = self.builder.get_object("totex_t")
+        self.entry_MVELO_AP = self.builder.get_object("mvelo_ap")
+        self.entry_MVELO_ML = self.builder.get_object("mvelo_ml")
+        self.entry_MVELO_TOTAL = self.builder.get_object("mvelo_t")
+        self.points_entry = self.builder.get_object("points_entry")
 
-        self.entry_Mdist = go("mdist_")
-        self.entry_Rdist_AP = go("rdist_ap")
-        self.entry_Rdist_ML = go("rdist_ml")
-        self.entry_Rdist_TOTAL = go("rdist_t")
-        self.entry_TOTEX_AP = go("totex_ap")
-        self.entry_TOTEX_ML = go("totex_ml")
-        self.entry_TOTEX_TOTAL = go("totex_t")
-        self.entry_MVELO_AP = go("mvelo_ap")
-        self.entry_MVELO_ML = go("mvelo_ml")
-        self.entry_MVELO_TOTAL = go("mvelo_t")
-        self.points_entry = go("points_entry")
+        #ProgressBar
+        self.progressbar1 = self.builder.get_object("progressbar1")
 
-        #Combo-boxes
-        self.combo_box_in_saved = go("combo_box_in_saved")
-        self.combo_box_text_in_search = go("combo_box_text_in_search")
-        self.sex_combobox = go("sex_combobox")
-        self.combobox_in_load_pacient = go("combobox_in_load_pacient")
-        self.combo_box_set_exam = go("combo_box_set_exam")
-
-        #Bars
-        self.progressbar1 = go("progressbar1")
+        #Combo-Boxes
+        self.sex_combobox = self.builder.get_object("sex_combobox")
+        self.combo_box_set_exam = self.builder.get_object("combo_box_set_exam")
 
         #Plots
-        '''Original Graph'''
+        #Original Graph
         self.fig = plt.figure(dpi=50)
         self.fig.suptitle('Original', fontsize=20)
         self.axis = self.fig.add_subplot(111)
@@ -1089,7 +1088,7 @@ class Iem_wbb:
         self.canvas = FigureCanvas(self.fig)
         self.boxOriginal.pack_start(self.canvas, expand=True, fill=True, padding=0)
 
-        '''Processed Graph'''
+        #Processed Graph
         self.fig2 = Figure(dpi=50)
         self.fig2.suptitle('Processado', fontsize=20)
 
@@ -1099,7 +1098,7 @@ class Iem_wbb:
         self.canvas2 = FigureCanvas(self.fig2)
         self.boxProcessado.pack_start(self.canvas2, expand=True, fill=True, padding=0)
 
-        '''Frequency Graph'''
+        #Fourier Graph
         self.fig3 = Figure(dpi=50)
         self.fig3.suptitle('Transformada de Fourier', fontsize=20)
         self.axis3 = self.fig3.add_subplot(111)
@@ -1107,8 +1106,87 @@ class Iem_wbb:
         self.axis3.set_xlabel('ML', fontsize = 16)
         self.canvas3 = FigureCanvas(self.fig3)
         self.boxFourier.pack_start(self.canvas3, expand=True, fill=True, padding=0)
+        
+        self.advanced_graphs_window.connect("delete-event", self.close_advanced_graphs_window)
 
-        '''Calibration Graph'''
+        #Boxes
+                                
+        self.instructions_on_saved_box = self.builder.get_object("instructions_on_saved_box")
+        self.box_calibration = self.builder.get_object("box_calibration")
+
+
+        #Windows
+        self.new_device_window = self.builder.get_object("new_device_window")
+        self.stand_up_window = self.builder.get_object("stand_up_window")
+        self.search_device_window = self.builder.get_object("search_device_window")
+        self.saved_devices_window = self.builder.get_object("saved_devices_window")
+        
+        self.load_pacient_window = self.builder.get_object("load_pacient_window")
+        self.calibration_window = self.builder.get_object("calibration_window")
+        self.calibration_equipment_window = self.builder.get_object("calibration_equipment_window")
+
+        #Delete-events
+        #self.register_window.connect("delete-event", self.close_register_window)
+        self.search_device_window.connect("delete-event", self.close_search_device_window)
+        self.new_device_window.connect("delete-event", self.close_new_device_window)
+        self.stand_up_window.connect("delete-event", self.close_stand_up_window)
+        self.saved_devices_window.connect("delete-event", self.close_saved_devices_window)
+        self.load_pacient_window.connect("delete-event", self.close_load_pacient_window)
+
+        #Images
+        self.image_in_saved = self.builder.get_object("image_in_saved")
+        self.calibration_image = self.builder.get_object("calibration_image")
+
+        #Buttons
+        self.start_capture_button = self.builder.get_object("start_capture_button")
+        self.save_device_in_search = self.builder.get_object("save_device_in_search")
+        self.connect_button_in_search = self.builder.get_object("connect_button_in_search")
+        self.connect_in_saved_button = self.builder.get_object("connect_in_saved_button")
+        self.add_as_default_button_in_add_device = self.builder.get_object("add_as_default_button_in_add_device")
+                                
+        self.start_calibration_button = self.builder.get_object("start_calibration_button")
+
+        #Spinners
+        self.spinner_in_search = self.builder.get_object("spinner_in_search")
+
+        #Labels
+        
+        self.pacient_label_in_load = self.builder.get_object("pacient_label_in_load")
+        self.calibration_label = self.builder.get_object("calibration_label")
+
+        #Entrys
+        self.username_entry_in_login = self.builder.get_object("username_entry_in_login")
+        self.password_entry_in_login = self.builder.get_object("password_entry_in_login")
+        self.password_entry_in_login.set_activates_default(True)
+       
+                                
+        self.device_name_in_new = self.builder.get_object("device_name_in_new")
+        self.device_mac_in_new = self.builder.get_object("device_mac_in_new")
+        self.mac_entry_in_saved = self.builder.get_object("mac_entry_in_saved")
+
+
+        self.entry_x1 = self.builder.get_object("entry_x1")
+        self.entry_x2 = self.builder.get_object("entry_x2")
+        self.entry_x3 = self.builder.get_object("entry_x3")
+        self.entry_x4 = self.builder.get_object("entry_x4")
+        self.entry_x5 = self.builder.get_object("entry_x5")
+        self.entry_y1 = self.builder.get_object("entry_y1")
+        self.entry_y2 = self.builder.get_object("entry_y2")
+        self.entry_y3 = self.builder.get_object("entry_y3")
+        self.entry_y4 = self.builder.get_object("entry_y4")
+        self.entry_y5 = self.builder.get_object("entry_y5")
+        self.entry_peso1 = self.builder.get_object("entry_peso1")
+        self.entry_peso2 = self.builder.get_object("entry_peso2")
+        self.entry_peso3 = self.builder.get_object("entry_peso3")
+        self.entry_peso4 = self.builder.get_object("entry_peso4")
+        self.entry_peso5 = self.builder.get_object("entry_peso5")
+
+        #Combo-boxes
+        self.combo_box_in_saved = self.builder.get_object("combo_box_in_saved")
+        self.combo_box_text_in_search = self.builder.get_object("combo_box_text_in_search")
+        self.combobox_in_load_pacient = self.builder.get_object("combobox_in_load_pacient")
+
+        #Calibration Graph
         self.fig4 = Figure(dpi=50)
         self.fig4.suptitle('Calibração', fontsize=20)
         self.axis4 = self.fig4.add_subplot(111)
@@ -1122,27 +1200,17 @@ class Iem_wbb:
         self.box_calibration.pack_start(self.canvas4, expand=True, fill=True, padding=0)
 
         self.login_window.show_all()
-        #self.window.show_all()
+        #self.main_window.show_all()
         #self.calibration_window.show_all()
+        #self.calibration_equipment_window.show_all()
 
 if __name__ == "__main__":
     global conn, cur
 
-    '''Connecting to DB'''
+    #Connecting to DB
     conn = psycopg2.connect("dbname=iem_wbb host=localhost user=postgres password=postgres")
-    '''Opening DB cursor'''
+    #Opening DB cursor
     cur = conn.cursor()
-    '''Creating tables'''
-    #try:
-    #    cur.execute("CREATE TABLE pacients(id serial PRIMARY KEY, name text, sex char(5), age smallint, height numeric(3,2), weight numeric(5,2), imc numeric(3,1));")
-    #    cur.execute("CREATE TABLE exams(id SERIAL PRIMARY KEY, APs NUMERIC(16,15)[], MLs NUMERIC(16,15)[], date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(), pac_id INT REFERENCES pacients(id));")
-    #    cur.execute("CREATE TABLE devices(id SERIAL PRIMARY KEY,name VARCHAR(50),mac VARCHAR(17));")
-    #    conn.commit()
-    #except:
-    #       print("Can't create table. Maybe it already exists.")
-
-    #while(Gtk.events_pending()):
-    #        Gtk.main_iteration()
 
     main = Iem_wbb()
     Gtk.main()

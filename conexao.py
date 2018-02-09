@@ -152,5 +152,5 @@ def connectToWBB(MAC):
     print(wiimote.request_status())
     return balance_dif, weights, i"""
 
-def closeConection(wiimote):
+def closeConnection(wiimote):
     wiimote.close()
