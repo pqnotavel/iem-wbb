@@ -157,7 +157,7 @@ def calcIMC(weight, size):
 def calcPesoMedio(weights):
     return sum(weights)/len(weights)
 
-def calcPontos(self, wiimote):
+def calcPontos(self, wiimote, t):
 
     wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
     wiimote.request_status()
@@ -186,7 +186,10 @@ def calcPontos(self, wiimote):
     dt = 0.040
     # dt = 0.032
     i = 0
-    amostra = 768
+    if(t == 1):
+        amostra = 768
+    else:
+        amostra = 128
     t1 = ptime.time() + dt
     weights = []
 
@@ -236,7 +239,7 @@ def calcPontos(self, wiimote):
 
         while(Gtk.events_pending()):
             Gtk.main_iteration()
-            self.progressbar1.set_fraction(i/amostra)
+            self.progressbar.set_fraction(i/amostra)
 
     stop = ptime.time()
     #os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % (duration, freq))
