@@ -92,17 +92,17 @@ class Iem_wbb:
         self.grid_resultados.attach(label_teste, self.current_image, self.current_weight+1, 1, 1)
         label_teste.set_visible(True)
 
-        if(self.current_weight == (len(self.calibration_weights) - 1)):
-            if(self.current_image == (len(self.calibration_images) - 1)):
+        if(self.current_image == (len(self.calibration_images) - 1)):
+            if(self.current_weight == (len(self.calibration_weights) - 1)):
                 self.scale_button.set_sensitive(False)
                 self.calibration_image.set_sensitive(False)
                 self.calibration_image.set_from_file("test_cal_2.png")
             else:
-                self.current_image = (self.current_image + 1) % len(self.calibration_images)
-                self.calibration_image.set_from_file(self.calibration_images[self.current_image])
+                self.current_weight = (self.current_weight + 1) % len(self.calibration_weights)
 
         if(self.scale_button.get_sensitive()):
-            self.current_weight = (self.current_weight + 1) % len(self.calibration_weights)
+            self.current_image = (self.current_image + 1) % len(self.calibration_images)
+            self.calibration_image.set_from_file(self.calibration_images[self.current_image])
             text = "Ajuste o peso de %dkg no ponto %d" % (self.calibration_weights[self.current_weight], self.current_image+1)
             self.calibration_label.set_text(text)
         else:
