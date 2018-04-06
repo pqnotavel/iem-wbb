@@ -82,8 +82,14 @@ class Iem_wbb:
         self.calibration_results_weights.append(midWeight)
         self.calibration_results_coordenates.append((Xs, Ys))
 
-        #self.axis4.plot(Xs, Ys, 'ro')
-        self.axis4.plot(Xs, -Ys, 'ro')
+        # Plotando os pontos no gráfico
+        if(not self.current_weight):
+            # 5kg = Vermelhos
+            #self.axis4.plot(Xs, Ys, 'ro')
+            self.axis4.plot(Xs, -Ys, 'ro')
+        else:
+            # 10kg = Verdes
+            self.axis4.plot(Xs, -Ys, 'go')
         self.canvas4.draw()
     
         self.scale_button.set_sensitive(True)
