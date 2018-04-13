@@ -1,2 +1,0 @@
-/usr/local/lib/python3.6/dist-packages/cwiid.cpython-36m-x86_64-linux-gnu.so
-/usr/local/lib/python3.6/dist-packages/cwiid-3.0.0.egg-info
