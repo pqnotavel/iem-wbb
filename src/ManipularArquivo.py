@@ -9,15 +9,15 @@ from datetime import datetime
 
 #cria diretorio, com o nome dos pacientes, onde será guardados seus respectivos arquivos
 def makeDir(path):
-    if os.path.isdir('./Pacients/'+path):
+    if os.path.isdir('./pacients/'+path):
         return False
-    os.mkdir('./Pacients/'+path)
+    os.mkdir('./pacients/'+path)
     return True
 
 def renameDir(pathOld, pathNew):
-    #if not os.path.isdir('.Pacients/'+pathOld):
+    #if not os.path.isdir('.pacients/'+pathOld):
     #    return False
-    os.rename('./Pacients/'+pathOld, './Pacients/'+pathNew)
+    os.rename('./pacients/'+pathOld, './pacients/'+pathNew)
 
 def saveWBB(dict_WBB):
     #Lendo arquivo
@@ -69,7 +69,7 @@ def savePacient(dict_paciente, path):
     worksheet.write(3, 0,u'Altura')
     worksheet.write(3, 1, dict_paciente['Altura'])
 
-    workbook.save('Pacients/'+path+'/'+dict_paciente['Nome']+'.xls')
+    workbook.save('pacients/'+path+'/'+dict_paciente['Nome']+'.xls')
 
 def saveExam(dict_paciente, APs, MLs, path):
     #Lendo arquivo

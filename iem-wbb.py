@@ -1290,7 +1290,7 @@ class Iem_wbb:
         self.status_bar.pack_start(self.battery_label, expand=True, fill=True, padding=0)
         self.status_bar.pack_start(self.progressbar, expand=True, fill=True, padding=0)
         
-        self.calibration_box.pack_end(self.status_bar, expand=False, fill=True, padding=0)
+        self.calibration_box.pack_end(self.status_bar, expand=False, fill=False, padding=0)
         #self.vbox1.pack_end(self.status_bar, expand=False, fill=True, padding=0)
 
         '''self.greenBG = Gdk.RGBA(0.9, 1.0, 0.9, 1.0)
