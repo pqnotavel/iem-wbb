@@ -17,7 +17,7 @@ import ManipularArquivo as manArq
 
 from matplotlib.figure import Figure
 from matplotlib import pyplot as plt
-from matplotlib import cm
+#from matplotlib import cm
 from matplotlib.backends.backend_gtk3cairo import FigureCanvasGTK3Cairo as FigureCanvas
 from matplotlib.backends.backend_gtk3 import NavigationToolbar2GTK3 as NavigationToolbar
 
@@ -28,16 +28,39 @@ from validate_email import validate_email
 
 class Iem_wbb:
     
-    def clear_all_calibration_window(self):
+    #Evento de seleção do método de calibração por pontos
+    def on_bypoints_calibration_button_clicked(self, widget):
+        #Esconde a janela do assistente
+        self.calibration_assistant.hide()
+        #Seta a imagem das instruções
+        self.equipment_image.set_from_file('./media/calibracao_ponto.png')
+        #Mostra a janela de instruções
+        self.calibration_equipment_window.show()
+
+    #Evento de seleção do método de calibração por sensores
+    def on_bysensor_calibration_button_clicked(self, widget):
+        #Esconde a janela do assistente
+        self.calibration_assistant.hide()
+        #Seta a imagem das instruções
+        self.equipment_image.set_from_file('./media/calibracao_sensor.png')
+        #Mostra a janela de instruções
+        self.calibration_equipment_window.show()
+        #Muda a variável de valor
+        self.calibration_by_points = False
+
+    #Evento de limpagem da tela de calibração por pontos
+    def clear_all_calibration_by_points_window(self):
+        #Muda a sensibilidade do bot~ao de medida
         self.scale_button.set_sensitive(False)
-        self.start_calibration_button.connect("clicked", self.on_start_calibration_button_clicked)
-        self.start_calibration_button.set_label('Iniciar')
+        #Muda a sensibilidade do bot~ao de inicio
         self.start_calibration_button.set_sensitive(True)
 
+        #Limpa o grid de resultados
         for i in range(2):
             for j in range(1,2):
                 self.grid_resultados.remove_row(j)
 
+        #Limpa o gráfico
         self.axis4.clear()
         self.axis4.set_ylabel('Y', fontsize = 16)
         self.axis4.set_xlabel('X', fontsize = 16)
@@ -48,24 +71,32 @@ class Iem_wbb:
         self.current_image = 0
         self.current_weight = 0
 
+        #Limpa a label de instruções
+        self.calibration_label.set_text("")
 
+    #Evento de seleção de novo teste de calibração por pontos
     def on_new_calibration_activate(self, menuitem, data=None):
-        self.clear_all_calibration_window()
+        self.clear_all_calibration_by_points_window()
 
+    #Evento de continuar para a calibração
     def on_continue_button_clicked(self, widget):
         self.calibration_equipment_window.hide()
-        self.calibration_window.show_all()
+        if(self.calibration_by_points):
+            self.calibration_by_points_window.show_all()
+        else:
+            self.calibration_by_sensors_window.show_all()
+
 
     def on_start_calibration_button_clicked(self, widget):
         '''if(not self.is_connected):
-                                    self.message_dialog_window.set_transient_for(self.calibration_window)
+                                    self.message_dialog_window.set_transient_for(self.calibration_by_points_window)
                                     self.message_dialog_window.format_secondary_text("É preciso conectar a um dispositivo para realizar o processo de captura.")
                                     self.message_dialog_window.show()
                                 else:'''
-        self.calibration_image.set_sensitive(True)
+        self.calibration_test_by_points_image.set_sensitive(True)
         self.scale_button.set_sensitive(True)
         self.start_calibration_button.set_sensitive(False)
-        self.calibration_image.set_from_file('./media/'+self.calibration_images[self.current_image])
+        self.calibration_test_by_points_image.set_from_file('./media/'+self.calibration_test_by_points_images[self.current_image])
         text = "Ajuste o peso de %dkg no ponto %d" % (self.calibration_weights[self.current_weight], self.current_image+1)
         self.calibration_label.set_text(text)
         self.progressbar.set_visible(True)
@@ -100,7 +131,7 @@ class Iem_wbb:
 
         label_teste = Gtk.Label.new("\t\t\t%dkg\n\n|Peso \t|\t\tX \t|\t\tY\t|\n|%.2f\t|\t%.3f\t|\t%.3f\t|" % (self.calibration_weights[self.current_weight], midWeight, Xs, Ys))
         
-        dialog = Gtk.MessageDialog(parent=self.calibration_window, flags=Gtk.DialogFlags.MODAL, 
+        dialog = Gtk.MessageDialog(parent=self.calibration_by_points_window, flags=Gtk.DialogFlags.MODAL, 
             type=Gtk.MessageType.INFO, buttons=('Repetir', Gtk.ResponseType.CANCEL,
                 'Continuar', Gtk.ResponseType.OK), message_format=label_teste.get_text())
 
@@ -127,17 +158,17 @@ class Iem_wbb:
                 self.axis4.plot(Xs, -Ys, 'go')
             self.canvas4.draw()
 
-            if(self.current_image == (len(self.calibration_images) - 1)):
+            if(self.current_image == (len(self.calibration_test_by_points_images) - 1)):
                 if(self.current_weight == (len(self.calibration_weights) - 1)):
                     self.scale_button.set_sensitive(False)
-                    self.calibration_image.set_sensitive(False)
-                    self.calibration_image.set_from_file("./media/test_cal_2.png")
+                    self.calibration_test_by_points_image.set_sensitive(False)
+                    self.calibration_test_by_points_image.set_from_file("./media/test_pontos.png")
                 else:
                     self.current_weight = (self.current_weight + 1) % len(self.calibration_weights)
 
             if(self.scale_button.get_sensitive()):
-                self.current_image = (self.current_image + 1) % len(self.calibration_images)
-                self.calibration_image.set_from_file('./media/'+self.calibration_images[self.current_image])
+                self.current_image = (self.current_image + 1) % len(self.calibration_test_by_points_images)
+                self.calibration_test_by_points_image.set_from_file('./media/'+self.calibration_test_by_points_images[self.current_image])
                 text = "Ajuste o peso de %dkg no ponto %d" % (self.calibration_weights[self.current_weight], self.current_image+1)
                 self.calibration_label.set_text(text)
             else:
@@ -192,20 +223,20 @@ class Iem_wbb:
         filter_any.add_pattern("*")
         dialog.add_filter(filter_any)
 
-    def on_calibration_window_destroy(self, object, data=None):
-        print("Quit in calibration_window from menu")
+    def on_calibration_by_points_window_destroy(self, object, data=None):
+        print("Quit in calibration_by_points_window from menu")
+        self.cur.close()
+        self.conn.close()
+        Gtk.main_quit()
+
+    def on_calibration_by_sensors_window_destroy(self, object, data=None):
+        print("Quit in calibration_by_sensors_window from menu")
         self.cur.close()
         self.conn.close()
         Gtk.main_quit()
 
     def on_cancel_button_in_login_clicked(self, widget):
         print("Quit in login with cancel_button")
-        self.cur.close()
-        self.conn.close()
-        Gtk.main_quit()
-
-    def on_login_window_destroy(self, object, data=None):
-        print("Quit in login from menu")
         self.cur.close()
         self.conn.close()
         Gtk.main_quit()
@@ -398,7 +429,7 @@ class Iem_wbb:
     def on_gtk_quit_activate(self, menuitem, data=None):
         print("Quit from menu")
         self.main_window.hide()
-        #self.calibration_window.hide()
+        #self.calibration_by_points_window.hide()
         self.clear_all_main_window()
         self.username_entry_in_login.grab_focus()
         self.login_window.show()
@@ -640,34 +671,17 @@ class Iem_wbb:
 
     #Disconnet self.wiimote
     def on_disconnect_activate(self, menuitem, data=None):
-        connect.closeConnection(self.wiimote)
-        self.is_connected = False
-        self.battery_label.set_text("Bateria:")
-        self.battery_label.set_visible(False)
-        self.status_image.set_from_file("./media/bt_red.png")
-        self.status_label.set_text("Não conectado")
+        if(self.wiimote):
+            connect.closeConnection(self.wiimote)
+            self.is_connected = False
+            self.battery_label.set_text("Bateria:")
+            self.battery_label.set_visible(False)
+            self.status_image.set_from_file("./media/bt_red.png")
+            self.status_label.set_text("Não conectado")
 
-    def close_load_pacient_window(self, arg1, arg2):
-        self.load_pacient_window.hide()
+    def main_window_delete_event(self, widget, arg2):
+        widget.hide()
         self.main_window.get_focus()
-        return True
-
-    def close_stand_up_window(self, arg1, arg2):
-        self.stand_up_window.hide()
-        self.main_window.get_focus()
-        return True
-
-    def close_search_device_window(self, arg1, arg2):
-        self.search_device_window.hide()
-        self.main_window.get_focus()
-        return True
-
-    def close_new_device_window(self, arg1, arg2):
-        self.new_device_window.hide()
-        return True
-
-    def close_saved_devices_window(self, arg1, arg2):
-        self.saved_devices_window.hide()
         return True
 
     def close_advanced_graphs_window(self, arg1, arg2):
@@ -680,11 +694,9 @@ class Iem_wbb:
     def on_cancel_in_saved_button_clicked(self, widget):
         print("Seleção de dispositivo cancelada")
         self.saved_devices_window.hide()
-
-        #Show search_device_window
     
     def on_search_device_activate(self, menuitem, data=None):
-        self.combo_box_text_in_search.remove_all()
+        self.combo_box_in_search.remove_all()
         self.spinner_in_search.start()
         self.search_device_window.show()
 
@@ -699,10 +711,10 @@ class Iem_wbb:
 
         self.devices = connect.searchWBB()
 
-        self.combo_box_text_in_search.remove_all()
+        self.combo_box_in_search.remove_all()
         device_ID = 0
         for addr, name in self.devices:
-            self.combo_box_text_in_search.append(str(device_ID), 'Nome: ' + name + '\nMAC: ' + addr)
+            self.combo_box_in_search.append(str(device_ID), 'Nome: ' + name + '\nMAC: ' + addr)
             device_ID += 1
 
         self.connect_button_in_search.set_sensitive(True)
@@ -710,7 +722,7 @@ class Iem_wbb:
         self.spinner_in_search.stop()
 
     def on_connect_button_in_search_clicked(self, widget):
-        device_ID = int(self.combo_box_text_in_search.get_active_id())
+        device_ID = int(self.combo_box_in_search.get_active_id())
 
         self.wiimote, self.battery = connect.connectToWBB(self.devices[device_ID][0])
 
@@ -728,7 +740,7 @@ class Iem_wbb:
             self.message_dialog_window.show()
 
     def on_save_device_in_search_clicked(self, widget):
-        device_ID = int(self.combo_box_text_in_search.get_active_id())
+        device_ID = int(self.combo_box_in_search.get_active_id())
 
         self.device_name_in_new.set_text(self.devices[device_ID][1])
         self.device_mac_in_new.set_text(self.devices[device_ID][0])
@@ -852,8 +864,6 @@ class Iem_wbb:
         self.stand_up_window.hide()
 
     def on_messagedialog_button_cancel_clicked(self, widget):
-        self.messagedialog_button_cancel.set_label("Fechar")
-        self.messagedialog_button_ok.set_visible(False)
         self.message_dialog_window.hide()
 
     def on_savepacient_button_clicked(self, widget):
@@ -908,23 +918,13 @@ class Iem_wbb:
                 ID = row[0][1]
                 self.pacient = {'Nome': name, 'ID': ID, 'Sexo': sex, 'Idade': age, 'Altura': height}
                 self.ID_entry.set_text(str(ID))
-                #manArq.makeDir(str(ID) + ' - ' + name)
-                #path = str(pacient['ID']) + ' - ' + pacient['Nome']
-                #manArq.savePacient(pacient, path)
             else:
-                #pathOld = str(pacient['ID']) + ' - ' + pacient['Nome']
-                #pathNew = str(pacient['ID']) + ' - ' + name
-                #manArq.renameDir(pathOld, pathNew)
-                #pathOld = pathNew + '/' + pacient['Nome'] + ".xls"
-                #pathNew = str(pacient['ID']) + ' - ' + name + '/' + name + ".xls"
-                #manArq.renameDir(pathOld, pathNew)
                 self.cur.execute("UPDATE pacients SET sex = (%s), age = (%s), height = (%s), name = (%s) WHERE id = (%s);", (sex, age, height, name, pacient['ID']))
                 self.conn.commit()
                 self.pacient['Nome'] = name
                 self.pacient['Sexo'] = sex
                 self.pacient['Idade'] = age
                 self.pacient['Altura'] = height
-                #manArq.savePacient(pacient, str(pacient['ID']) + ' - ' + name)
             print("Paciente salvo")
             self.changepacientbutton.set_sensitive(True)
             self.is_pacient = True
@@ -1061,10 +1061,7 @@ class Iem_wbb:
     def on_save_exam_button_clicked(self, widget):
         self.cur.execute("INSERT INTO exams (APs, MLs, pac_id, usr_id) VALUES (%s, %s, %s, %s)", (self.APs, self.MLs, self.pacient['ID'], self.user_ID))
         self.conn.commit()
-        #path = 'pacients/' + str(pacient['ID']) + ' - ' + pacient['Nome']
-        #self.fig.canvas.print_png(str(path + '/grafico original'))
-        #self.fig2.canvas.print_png(str(path + '/grafico processado'))
-        #manArq.saveExam(pacient, APs, MLs, path)
+
         self.combo_box_set_exam.set_active_id("0")
         self.combo_box_set_exam.set_sensitive(True)
         self.load_exam_button.set_sensitive(True)
@@ -1093,10 +1090,11 @@ class Iem_wbb:
         self.is_exam = False
         self.is_connected = False
         self.modifying = False
+        self.calibration_by_points = True
 
         self.pacient = {}
 
-        self.calibration_images = ["test_cal_21.png", "test_cal_22.png", "test_cal_23.png", "test_cal_24.png", "test_cal_25.png"]
+        self.calibration_test_by_points_images = ["test_pontos_1.png", "test_pontos_2.png", "test_pontos_3.png", "test_pontos_4.png", "test_pontos_5.png"]
         self.current_image = 0
         self.calibration_weights = [5, 10]
         #self.calibration_weights = [5, 10, 15, 20]
@@ -1123,14 +1121,20 @@ class Iem_wbb:
         self.search_device_window = self.builder.get_object("search_device_window")
         self.saved_devices_window = self.builder.get_object("saved_devices_window")
         self.load_pacient_window = self.builder.get_object("load_pacient_window")
-        self.calibration_window = self.builder.get_object("calibration_window")
+        self.calibration_by_points_window = self.builder.get_object("calibration_by_points_window")
+        self.calibration_by_sensors_window = self.builder.get_object("calibration_by_sensors_window")
         self.calibration_equipment_window = self.builder.get_object("calibration_equipment_window")
+        self.calibration_assistant = self.builder.get_object("calibration_assistant")
 
         #Boxes
         self.boxOriginal = self.builder.get_object("boxOriginal")
         self.boxProcessado = self.builder.get_object("boxProcessado")
         self.boxFourier = self.builder.get_object("boxFourier")
         self.boxAdvanced = self.builder.get_object("boxAdvanced")
+        self.instructions_on_saved_box = self.builder.get_object("instructions_on_saved_box")
+        self.graphs_calibration_by_points_box = self.builder.get_object("graphs_calibration_by_points_box")
+        self.calibration_box = self.builder.get_object("calibration_box")
+        self.vbox1 = self.builder.get_object("vbox1")
         
         #Images
         self.login_image = self.builder.get_object("login_image")
@@ -1141,12 +1145,21 @@ class Iem_wbb:
         self.search_image.set_from_file('./media/syncButton.png')
         self.pacient_image = self.builder.get_object("pacient_image")
         self.pacient_image.set_from_file('./media/paciente.png')
-        self.calibration_image = self.builder.get_object("calibration_image")
-        self.calibration_image.set_from_file('./media/test_cal_2.png')
+        self.calibration_test_by_points_image = self.builder.get_object("calibration_test_by_points_image")
+        self.calibration_test_by_points_image.set_from_file('./media/test_pontos.png')
+        self.calibration_test_by_sensors_image = self.builder.get_object("calibration_test_by_sensors_image")
+        self.calibration_test_by_sensors_image.set_from_file('./media/test_sensores.png')
         self.equipment_image = self.builder.get_object("equipment_image")
-        self.equipment_image.set_from_file('./media/calibracao.png')
+        self.calibration_by_points_image = self.builder.get_object("calibration_by_points_image")
+        self.calibration_by_points_image.set_from_file('./media/test_pontos.png')
+        self.calibration_by_sensor_image = self.builder.get_object("calibration_by_sensor_image")
+        self.calibration_by_sensor_image.set_from_file('./media/test_sensores.png')
 
         #Buttons
+        self.save_device_in_search = self.builder.get_object("save_device_in_search")
+        self.connect_button_in_search = self.builder.get_object("connect_button_in_search")
+        self.connect_in_saved_button = self.builder.get_object("connect_in_saved_button")
+        self.add_as_default_button_in_add_device = self.builder.get_object("add_as_default_button_in_add_device")                   
         self.capture_button = self.builder.get_object("capture_button")
         self.savepacient_button = self.builder.get_object("savepacient_button")
         self.changepacientbutton = self.builder.get_object("changepacientbutton")
@@ -1177,33 +1190,21 @@ class Iem_wbb:
         #Combo-Boxes
         self.sex_combobox = self.builder.get_object("sex_combobox")
         self.combo_box_set_exam = self.builder.get_object("combo_box_set_exam")
-
-        self.advanced_graphs_window.connect("delete-event", self.close_advanced_graphs_window)
-
-        #Boxes                  
-        self.instructions_on_saved_box = self.builder.get_object("instructions_on_saved_box")
-        self.graphs_calibration_box = self.builder.get_object("graphs_calibration_box")
-        self.calibration_box = self.builder.get_object("calibration_box")
-        self.vbox1 = self.builder.get_object("vbox1")
+        self.combo_box_in_saved = self.builder.get_object("combo_box_in_saved")
+        self.combo_box_in_search = self.builder.get_object("combo_box_in_search")
+        self.combobox_in_load_pacient = self.builder.get_object("combobox_in_load_pacient")
 
         #Delete-events
+        self.login_window.connect('destroy', Gtk.main_quit)
         self.register_window.connect("delete-event", self.close_register_window)
-        self.search_device_window.connect("delete-event", self.close_search_device_window)
-        self.new_device_window.connect("delete-event", self.close_new_device_window)
-        self.stand_up_window.connect("delete-event", self.close_stand_up_window)
-        self.saved_devices_window.connect("delete-event", self.close_saved_devices_window)
-        self.load_pacient_window.connect("delete-event", self.close_load_pacient_window)
-
-        #Buttons
-        self.start_capture_button = self.builder.get_object("start_capture_button")
-        self.save_device_in_search = self.builder.get_object("save_device_in_search")
-        self.connect_button_in_search = self.builder.get_object("connect_button_in_search")
-        self.connect_in_saved_button = self.builder.get_object("connect_in_saved_button")
-        self.add_as_default_button_in_add_device = self.builder.get_object("add_as_default_button_in_add_device")
-                                
-        self.start_calibration_button = self.builder.get_object("start_calibration_button")
-        self.messagedialog_button_ok = self.builder.get_object("messagedialog_button_ok")
-        self.messagedialog_button_cancel = self.builder.get_object("messagedialog_button_cancel")
+        self.search_device_window.connect("delete-event", self.main_window_delete_event)
+        self.new_device_window.connect("delete-event", self.main_window_delete_event)
+        self.stand_up_window.connect("delete-event", self.main_window_delete_event)
+        self.saved_devices_window.connect("delete-event", self.main_window_delete_event)
+        self.load_pacient_window.connect("delete-event", self.main_window_delete_event)
+        self.advanced_graphs_window.connect("delete-event", self.close_advanced_graphs_window)
+        self.calibration_assistant.connect('delete-event', Gtk.main_quit)
+        self.calibration_equipment_window.connect('delete-event', Gtk.main_quit)
 
         #Spinners
         self.spinner_in_search = self.builder.get_object("spinner_in_search")
@@ -1223,14 +1224,6 @@ class Iem_wbb:
         self.device_name_in_new = self.builder.get_object("device_name_in_new")
         self.device_mac_in_new = self.builder.get_object("device_mac_in_new")
         self.mac_entry_in_saved = self.builder.get_object("mac_entry_in_saved")
-
-        #Combo-boxes
-        self.combo_box_in_saved = self.builder.get_object("combo_box_in_saved")
-        self.combo_box_text_in_search = self.builder.get_object("combo_box_text_in_search")
-        self.combobox_in_load_pacient = self.builder.get_object("combobox_in_load_pacient")
-
-        #Separators
-        self.separator_results = self.builder.get_object("separator_results")
 
         #Plots
         #Original Graph
@@ -1272,7 +1265,7 @@ class Iem_wbb:
         self.axis4.axhline(0, color='grey')
         self.axis4.axvline(0, color='grey')
         self.canvas4 = FigureCanvas(self.fig4)
-        self.graphs_calibration_box.pack_start(self.canvas4, expand=True, fill=True, padding=0)
+        self.graphs_calibration_by_points_box.pack_start(self.canvas4, expand=True, fill=True, padding=0)
 
         #StatusBar
         self.status_bar = Gtk.Box(spacing=10)
@@ -1290,19 +1283,14 @@ class Iem_wbb:
         self.status_bar.pack_start(self.battery_label, expand=True, fill=True, padding=0)
         self.status_bar.pack_start(self.progressbar, expand=True, fill=True, padding=0)
         
-        self.calibration_box.pack_end(self.status_bar, expand=False, fill=False, padding=0)
+        # Login
         #self.vbox1.pack_end(self.status_bar, expand=False, fill=True, padding=0)
-
-        '''self.greenBG = Gdk.RGBA(0.9, 1.0, 0.9, 1.0)
-                                self.login_window.override_background_color(0,self.greenBG)
-                                self.main_window.override_background_color(0,self.greenBG)'''
-
         #self.login_window.show_all()
-        self.calibration_window.show_all()
-        #self.calibration_equipment_window.show_all()
-        
-        self.battery_label.set_visible(False)
-        #self.progressbar.set_visible(False)
+
+        # Calibração
+        self.calibration_box.pack_end(self.status_bar, expand=False, fill=False, padding=0)
+        self.calibration_assistant.show_all()
+
 
 if __name__ == "__main__":
 

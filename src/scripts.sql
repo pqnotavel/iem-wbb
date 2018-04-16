@@ -13,6 +13,7 @@ CREATE TABLE devices(id SERIAL PRIMARY KEY,name VARCHAR(50),mac VARCHAR(17), is_
 
 BEGIN;
 INSERT INTO users (name, username, password, email, is_adm)  VALUES ('Raí Sales Pereira Bizerra', 'rspbizerra', crypt('rspbizerra', gen_salt('md5')), 'raispbizerra@gmail.com', TRUE);
+INSERT INTO users (name, username, password, email, is_adm)  VALUES ('Tulio Campos', 'tulio', crypt('tulio123', gen_salt('md5')), 'tuliocampossilva@gmail.com', TRUE);
 INSERT INTO devices (name, mac, is_default) VALUES ('WBB2', '00:22:4C:56:D3:F4', TRUE);
 INSERT INTO pacients (name, sex, age, height) VALUES ('Raí Bizerra', 'Masculino', '23', '1.86');
 COPY exams (id, aps, mls, date, pac_id, usr_id) FROM stdin;
