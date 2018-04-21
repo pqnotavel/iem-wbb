@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+    # -*- coding: utf-8 -*-
 
 import cwiid
 import os
@@ -166,8 +166,6 @@ def calcPesoMedio(weights):
 
 def calcPontos(self, wiimote, t):
 
-    wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
-    wiimote.request_status()
     balance_calibration = wiimote.get_balance_cal()
     named_calibration = { 'right_top': balance_calibration[0],
                              'right_bottom': balance_calibration[1],
@@ -188,7 +186,6 @@ def calcPontos(self, wiimote, t):
     #ptime.sleep(10)
     #print("Já!!!!!!!!!!")
     #os.system('play --no-show-progress --null --channels 1 synth %s sine %f' % (duration, freq))
-    start = ptime.time()
     # dt = 0.03125
     dt = 0.040
     # dt = 0.032
@@ -197,8 +194,12 @@ def calcPontos(self, wiimote, t):
         amostra = 768
     else:
         amostra = 128
-    t1 = ptime.time() + dt
     weights = []
+
+    start = ptime.time()
+    t1 = ptime.time() + dt
+    wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
+    #wiimote.request_status()
 
     while (i < amostra):
         wiimote.request_status()
@@ -212,17 +213,19 @@ def calcPontos(self, wiimote, t):
             x_balance = 1.
             y_balance = 1.
 
-        x_balance = (float(r_rt + r_rb)) / (float(r_lt + r_lb))
-        if x_balance > 1:
-            x_balance = (((float(r_lt + r_lb)) / (float(r_rt + r_rb)) ) *-1.) +1.
-        else:
-            x_balance = x_balance -1.
+        x_balance, y_balance = calCoP()
 
-        y_balance = (float(r_lb + r_rb)) / (float(r_lt + r_rt))
-        if y_balance > 1:
-            y_balance = (((float(r_lt + r_rt)) / (float(r_lb + r_rb))) * -1.) + 1.
-        else:
-            y_balance = y_balance - 1
+        '''x_balance = (float(r_rt + r_rb)) / (float(r_lt + r_lb))
+                                if x_balance > 1:
+                                    x_balance = (((float(r_lt + r_lb)) / (float(r_rt + r_rb)) ) *-1.) +1.
+                                else:
+                                    x_balance = x_balance -1.
+                        
+                                y_balance = (float(r_lb + r_rb)) / (float(r_lt + r_rt))
+                                if y_balance > 1:
+                                    y_balance = (((float(r_lt + r_rt)) / (float(r_lb + r_rb))) * -1.) + 1.
+                                else:
+                                    y_balance = y_balance - 1'''
 
         # balance_lst.append((x_balance,y_balance))
         i += 1
@@ -235,6 +238,10 @@ def calcPontos(self, wiimote, t):
 
         if (x_ref != x_balance or y_ref != y_balance):
             balance_dif.append((x_balance, y_balance))
+            #balance_dif.append((x_balance, y_balance))
+            #balance_dif_x[i] = x_balance
+            #balance_dif_y[i] = x_balance
+
             x_ref = x_balance
             y_ref = y_balance
 
