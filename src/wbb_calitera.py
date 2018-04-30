@@ -4,6 +4,7 @@ import sys
 import os
 import time
 import numpy as np
+import bluetooth
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -71,6 +72,13 @@ def captura1(wiimote):
     readings = wiimote.state['balance']
 
     return readings
+
+def search():
+
+    print ("Start discovering....")
+    nearby_devices = bluetooth.discover_devices(duration=1, lookup_names = True)
+
+    return nearby_devices
 
 def conecta(mac):
     #mac = "00:26:59:DD:0A:6F"  #WBB_ESBEL
