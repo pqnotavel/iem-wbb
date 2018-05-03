@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+
 import sys
 import os
 import time
@@ -89,7 +90,7 @@ def conecta(mac):
 
     wiimote.rpt_mode = cwiid.RPT_BALANCE | cwiid.RPT_BTN
     wiimote.request_status()
-    
+
     while (wiimote.state['ext_type'] != cwiid.EXT_BALANCE):
         print('Este programa suporta apenas o Wii Balance Board')
         print("Por favor, pressione o botão vermelho 'conectar' na Wii Balance Board (WBB), dentro do compartimento da bateria.")

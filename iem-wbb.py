@@ -30,10 +30,10 @@ import time as ptime
 BATTERY_MAX = 208
 
 class Iem_wbb:
-    
+
     def on_save_as_activate(self, menuitem, data=None):
         path = str('./pacients/' + self.pacient['ID'] + ' - ' + self.pacient['Nome'])
-        
+
         if(self.is_pacient and self.is_exam):
             dialog = Gtk.FileChooserDialog("Salvar como", self.main_window,
                 Gtk.FileChooserAction.SAVE,
@@ -165,7 +165,7 @@ class Iem_wbb:
         self.password_check_entry_in_register = self.iemBuilder.get_object("password_check_entry_in_register")
         self.email_entry_in_register = self.iemBuilder.get_object("email_entry_in_register")
         self.adm_password_entry_in_register = self.iemBuilder.get_object("adm_password_entry_in_register")
-        
+
         #Button
         self.is_adm_button_in_register = self.iemBuilder.get_object("is_adm_button_in_register")
 
@@ -176,7 +176,7 @@ class Iem_wbb:
         self.email_entry_in_register.set_text("")
         self.adm_password_entry_in_register.set_text("")
         self.is_adm_button_in_register.set_active(False)
-        
+
         self.full_name_entry_in_register.grab_focus()
         self.register_window.show()
 
@@ -550,7 +550,7 @@ class Iem_wbb:
     def on_cancel_in_saved_button_clicked(self, widget):
         print("Seleção de dispositivo cancelada")
         self.saved_devices_window.hide()
-    
+
     def on_search_device_activate(self, menuitem, data=None):
         self.combo_box_in_search.remove_all()
         self.spinner_in_search.start()
@@ -693,7 +693,7 @@ class Iem_wbb:
         self.new_device_window.hide()
 
     def on_button_press_event(self, widget, event):
-        
+
         if event.type == Gdk.EventType.DOUBLE_BUTTON_PRESS and event.button == 1:
             if(Gtk.get_event_widget(Gtk.get_current_event()) == self.canvas):
                 print("Janela Avançada")
@@ -719,7 +719,7 @@ class Iem_wbb:
         self.message_dialog_window.hide()
 
     def on_savepacient_button_clicked(self, widget):
-        
+
         self.is_pacient = False
 
         name = self.name_entry.get_text()
@@ -818,8 +818,10 @@ class Iem_wbb:
         peso = 0.0
 
         dt = 0.040
+        tTotal = self.amostra * dt
         t1 = ptime.time() + dt
-
+        #print(self.amostra)
+        #print(type(self.amostra))
         for i in range(self.amostra):
 
             while(Gtk.events_pending()):
@@ -828,11 +830,11 @@ class Iem_wbb:
 
             readings = wbb.captura1(self.wiimote)
 
-            if(i == 0):
-                peso = wbb.calcWeight(readings, self.WBB['Calibração'], wbb.escala_eu)
+
+            peso += wbb.calcWeight(readings, self.WBB['Calibração'], wbb.escala_eu)
 
             CoP_x, CoP_y =  wbb.calCoP(readings, self.WBB['Calibração'], wbb.escala_eu)
-        
+
             self.MLs[i] = CoP_x
             self.APs[i] = CoP_y
 
@@ -840,8 +842,9 @@ class Iem_wbb:
                 pass
 
             t1 += dt
-
-        imc = peso/float(self.pacient['Altura'])**2
+        peso = peso / self.amostra
+        altura = float(self.pacient['Altura'])/100.
+        imc = peso/altura**2
 
         self.points_entry.set_text(str(self.amostra))
 
@@ -857,25 +860,63 @@ class Iem_wbb:
         self.axis.plot(self.MLs, self.APs,'.-',color='r')
         self.canvas.draw()
 
-        APs_Processado, MLs_Processado = calc.geraAP_ML(self.APs, self.MLs)
-
+        APs_Processado, MLs_Processado, AP_, ML_ = calc.geraAP_ML(self.APs, self.MLs)
+        print("AP_ = ", AP_)
+        print("ML_ = ", ML_)
+        #RD
         dis_resultante_total = calc.distanciaResultante(APs_Processado, MLs_Processado)
+
+        #? Isto não faz sentido
         dis_resultante_AP = calc.distanciaResultanteParcial(APs_Processado)
         dis_resultante_ML = calc.distanciaResultanteParcial(MLs_Processado)
 
+        #MDIST
         dis_media = calc.distanciaMedia(dis_resultante_total)
 
-        dis_rms_total = calc.distRMS(dis_resultante_total)
-        dis_rms_AP = calc.distRMS(dis_resultante_AP)
-        dis_rms_ML = calc.distRMS(dis_resultante_ML)
+        #MDIST_AP
+        dis_mediaAP = calc.distanciaMedia_(APs_Processado)
+        #MDIST_ML
+        dis_mediaML = calc.distanciaMedia_(MLs_Processado)
 
+        print("MDIST = ", dis_media)
+        print("MDIST_AP = ", dis_mediaAP)
+        print("MDIST_ML = ", dis_mediaML)
+
+        #RDIST
+        dis_rms_total = calc.distRMS(dis_resultante_total)
+        #dis_rms_AP = calc.distRMS(dis_resultante_AP)
+        #dis_rms_ML = calc.distRMS(dis_resultante_ML)
+        #RDIST_AP
+        dis_rms_AP = calc.distRMS(APs_Processado)
+        #RDIST_AP
+        dis_rms_ML = calc.distRMS(MLs_Processado)
+
+        print("RDIST = ", dis_rms_total)
+        print("RDIST_AP = ", dis_rms_AP)
+        print("RDIST_ML = ", dis_rms_ML)
+
+        #totex_total = calc.totex(APs_Processado, MLs_Processado)
+        #TOTEX
         totex_total = calc.totex(APs_Processado, MLs_Processado)
+        #TOTEX_AP
         totex_AP = calc.totexParcial(APs_Processado)
+        #TOTEX_ML
         totex_ML = calc.totexParcial(MLs_Processado)
 
-        mvelo_total = calc.mVelo(totex_total, 20)
-        mvelo_AP = calc.mVelo(totex_AP, 20)
-        mvelo_ML =  calc.mVelo(totex_ML, 20)
+        print("TOTEX = ", totex_total)
+        print("TOTEX_AP = ", totex_AP)
+        print("TOTEX_ML = ", totex_ML)
+
+        #MVELO
+        mvelo_total = calc.mVelo(totex_total, tTotal)
+        #MVELO_AP
+        mvelo_AP = calc.mVelo(totex_AP, tTotal)
+        #MVELO_ML
+        mvelo_ML =  calc.mVelo(totex_ML, tTotal)
+
+        print("MVELO = ", mvelo_total)
+        print("MVELO_AP = ", mvelo_AP)
+        print("MVELO_ML = ", mvelo_ML)
 
         self.entry_Mdist.set_text(str(dis_media))
 
@@ -891,19 +932,22 @@ class Iem_wbb:
         self.entry_MVELO_AP.set_text(str(mvelo_AP))
         self.entry_MVELO_ML.set_text(str(mvelo_ML))
 
-        max_absoluto_AP = calc.valorAbsoluto(min(APs_Processado), max(APs_Processado))
-        max_absoluto_ML = calc.valorAbsoluto(min(MLs_Processado), max(MLs_Processado))
+        #max_absoluto_AP = calc.valorAbsoluto(min(APs_Processado), max(APs_Processado))
+        #max_absoluto_ML = calc.valorAbsoluto(min(MLs_Processado), max(MLs_Processado))
 
-        max_absoluto_AP *=1.25
-        max_absoluto_ML *=1.25
+        max_absoluto_AP = np.absolute(APs_Processado).max()
+        max_absoluto_ML = np.absolute(MLs_Processado).max()
+
+        max_absoluto_AP *=1.05
+        max_absoluto_ML *=1.05
 
         print('max_absoluto_AP:', max_absoluto_AP, 'max_absoluto_ML:', max_absoluto_ML)
-        
+
         self.axis2.set_xlim(-max_absoluto_ML, max_absoluto_ML)
         self.axis2.set_ylim(-max_absoluto_AP, max_absoluto_AP)
         self.axis2.plot(MLs_Processado, APs_Processado,'.-',color='g')
         self.canvas2.draw()
-        
+
         self.save_exam_button.set_sensitive(True)
 
     def on_save_exam_button_clicked(self, widget):
@@ -948,7 +992,7 @@ class Iem_wbb:
     def __init__(self):
 
         #Connecting to DB
-        self.conn = psycopg2.connect("dbname=iem_wbb host=localhost user=postgres password=postgres")
+        self.conn = psycopg2.connect("dbname=iem_wbb host=localhost user=postgres password=wiibalanceboard")
         #Opening DB cursor
         self.cur = self.conn.cursor()
 
@@ -993,7 +1037,7 @@ class Iem_wbb:
         self.stand_up_window = self.iemBuilder.get_object("stand_up_window")
         self.load_pacient_window = self.iemBuilder.get_object("load_pacient_window")
         self.advanced_graphs_window = self.iemBuilder.get_object("advanced_graphs_window")
-        
+
         self.message_dialog_window = self.commonBuilder.get_object("message_dialog_window")
         self.new_device_window = self.commonBuilder.get_object("new_device_window")
         self.search_device_window = self.commonBuilder.get_object("search_device_window")
@@ -1005,7 +1049,7 @@ class Iem_wbb:
         self.boxFourier = self.iemBuilder.get_object("boxFourier")
         self.boxAdvanced = self.iemBuilder.get_object("boxAdvanced")
         self.main_box = self.iemBuilder.get_object("main_box")
-        
+
         #Images
         self.login_image = self.iemBuilder.get_object("login_image")
         self.login_image.set_from_file('./media/cadeado.png')
@@ -1020,13 +1064,13 @@ class Iem_wbb:
         self.save_device_in_search = self.commonBuilder.get_object("save_device_in_search")
         self.connect_button_in_search = self.commonBuilder.get_object("connect_button_in_search")
         self.connect_in_saved_button = self.commonBuilder.get_object("connect_in_saved_button")
-        self.add_as_default_button_in_add_device = self.commonBuilder.get_object("add_as_default_button_in_add_device")                   
+        self.add_as_default_button_in_add_device = self.commonBuilder.get_object("add_as_default_button_in_add_device")
         self.capture_button = self.iemBuilder.get_object("capture_button")
         self.savepacient_button = self.iemBuilder.get_object("savepacient_button")
         self.changepacientbutton = self.iemBuilder.get_object("changepacientbutton")
         self.save_exam_button = self.iemBuilder.get_object("save_exam_button")
         self.load_exam_button = self.iemBuilder.get_object("load_exam_button")
-        
+
         #Entrys
         self.name_entry = self.iemBuilder.get_object("name_entry")
         self.age_entry = self.iemBuilder.get_object("age_entry")
@@ -1069,15 +1113,15 @@ class Iem_wbb:
         self.saved_devices_window.connect("delete-event", self.main_window_delete_event)
         self.load_pacient_window.connect("delete-event", self.main_window_delete_event)
         self.advanced_graphs_window.connect("delete-event", self.close_advanced_graphs_window)
-        
+
         #Spinners
         self.spinner_in_search = self.commonBuilder.get_object("spinner_in_search")
 
         #Labels
         self.pacient_label_in_load = self.iemBuilder.get_object("pacient_label_in_load")
-        
+
         #Charts
-    
+
         self.fig = plt.figure(dpi=50)
         self.fig.suptitle('Original', fontsize=20)
         self.fig2 = plt.figure(dpi=50)
@@ -1087,7 +1131,7 @@ class Iem_wbb:
         self.axis = self.fig.add_subplot(111)
         self.axis2 = self.fig2.add_subplot(111)
         self.axis3 = self.fig3.add_subplot(111)
-        
+
         for a in [self.axis, self.axis2, self.axis3]:
             a.set_ylabel('AP', fontsize = 16)
             a.set_xlabel('ML', fontsize = 16)
@@ -1095,14 +1139,14 @@ class Iem_wbb:
             a.set_ylim(-238/2, 238/2)
             a.axhline(0, color='grey')
             a.axvline(0, color='grey')
-        
+
         self.canvas = FigureCanvas(self.fig)
         self.boxOriginal.pack_start(self.canvas, expand=True, fill=True, padding=0)
         self.canvas2 = FigureCanvas(self.fig2)
         self.boxProcessado.pack_start(self.canvas2, expand=True, fill=True, padding=0)
         self.canvas3 = FigureCanvas(self.fig3)
         self.boxFourier.pack_start(self.canvas3, expand=True, fill=True, padding=0)
-        
+
         #StatusBar
         self.status_bar = Gtk.Box(spacing=0)
         status_sep1 = Gtk.VSeparator()
@@ -1122,7 +1166,7 @@ class Iem_wbb:
         self.status_bar.pack_start(self.battery_label, expand=True, fill=True, padding=0)
         self.status_bar.pack_start(status_sep2, expand=False, fill=False, padding=0)
         self.status_bar.pack_start(self.progressbar, expand=True, fill=True, padding=0)
-        
+
         ''' Login '''
         self.main_box.pack_end(self.status_bar, expand=False, fill=True, padding=0)
         #self.login_window.show_all()

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 import cwiid
 import bluetooth
 
@@ -33,7 +34,7 @@ def connectToWBB(MAC):
             i +=1
 
     battery = wiimote.state['battery']/cwiid.BATTERY_MAX
-    
+
     return wiimote, battery
 
 def closeConnection(wiimote):
