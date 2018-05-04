@@ -408,13 +408,83 @@ class Iem_wbb:
     def on_load_exam_button_clicked(self, widget):
         self.is_exam = False
 
-        max_absoluto_AP = calc.valorAbsoluto(min(self.APs), max(self.APs))
-        max_absoluto_ML = calc.valorAbsoluto(min(self.MLs), max(self.MLs))
+        #max_absoluto_AP = calc.valorAbsoluto(min(self.APs), max(self.APs))
+        #max_absoluto_ML = calc.valorAbsoluto(min(self.MLs), max(self.MLs))
 
-        max_absoluto_AP *= 1.25
-        max_absoluto_ML *= 1.25
+        #max_absoluto_AP *= 1.25
+        #max_absoluto_ML *= 1.25
 
-        print('max_absoluto_AP:',max_absoluto_AP,'max_absoluto_ML:',max_absoluto_ML)
+        #print('max_absoluto_AP:',max_absoluto_AP,'max_absoluto_ML:',max_absoluto_ML)
+
+        self.APs = np.array(self.APs)
+        self.MLs = np.array(self.MLs)
+
+        dt = 0.040
+        tTotal = self.amostra * dt
+
+        APs_Processado, MLs_Processado, AP_, ML_ = calc.geraAP_ML(self.APs, self.MLs)
+        print("AP_ = ", round(AP_, 2))
+        print("ML_ = ", round(ML_, 2))
+
+        #RD
+        dis_resultante_total = calc.distanciaResultante(APs_Processado, MLs_Processado)
+
+        #MDIST
+        dis_media = calc.distanciaMedia(dis_resultante_total)
+
+        #MDIST_AP
+        dis_mediaAP = calc.distanciaMedia_(APs_Processado)
+        #MDIST_ML
+        dis_mediaML = calc.distanciaMedia_(MLs_Processado)
+
+        print("MDIST = ", round(dis_media, 2))
+        print("MDIST_AP = ", round(dis_mediaAP, 2))
+        print("MDIST_ML = ", round(dis_mediaML, 2))
+
+        #RDIST
+        dis_rms_total = calc.distRMS(dis_resultante_total)
+        #dis_rms_AP = calc.distRMS(dis_resultante_AP)
+        #dis_rms_ML = calc.distRMS(dis_resultante_ML)
+        #RDIST_AP
+        dis_rms_AP = calc.distRMS(APs_Processado)
+        #RDIST_AP
+        dis_rms_ML = calc.distRMS(MLs_Processado)
+
+        print("RDIST = ", round(dis_rms_total, 2))
+        print("RDIST_AP = ", round(dis_rms_AP, 2))
+        print("RDIST_ML = ", round(dis_rms_ML, 2))
+
+        #totex_total = calc.totex(APs_Processado, MLs_Processado)
+        #TOTEX
+        totex_total = calc.totex(APs_Processado, MLs_Processado)
+        #TOTEX_AP
+        totex_AP = calc.totexParcial(APs_Processado)
+        #TOTEX_ML
+        totex_ML = calc.totexParcial(MLs_Processado)
+
+        print("TOTEX = ", round(totex_total, 2))
+        print("TOTEX_AP = ", round(totex_AP, 2))
+        print("TOTEX_ML = ", round(totex_ML, 2))
+
+        #MVELO
+        mvelo_total = calc.mVelo(totex_total, tTotal)
+        #MVELO_AP
+        mvelo_AP = calc.mVelo(totex_AP, tTotal)
+        #MVELO_ML
+        mvelo_ML =  calc.mVelo(totex_ML, tTotal)
+
+        print("MVELO = ", round(mvelo_total, 2))
+        print("MVELO_AP = ", round(mvelo_AP, 2))
+        print("MVELO_ML = ", round(mvelo_ML, 2))
+
+        max_absoluto_AP = np.absolute(APs_Processado).max()
+        max_absoluto_ML = np.absolute(MLs_Processado).max()
+
+        max_absoluto_AP *=1.05
+        max_absoluto_ML *=1.05
+
+        print('max_absoluto_AP:', round(max_absoluto_AP, 2))
+        print('max_absoluto_ML:', round(max_absoluto_ML, 2))
 
         for x in [self.axis, self.axis2, self.axis3]:
             x.clear()
@@ -428,47 +498,61 @@ class Iem_wbb:
         self.axis.plot(self.MLs, self.APs,'.-',color='r')
         self.canvas.draw()
 
-        APs_Processado, MLs_Processado = calc.geraAP_ML(self.APs, self.MLs)
+        #APs_Processado, MLs_Processado,  = calc.geraAP_ML(self.APs, self.MLs)
 
-        dis_resultante_total = calc.distanciaResultante(APs_Processado, MLs_Processado)
-        dis_resultante_AP = calc.distanciaResultanteParcial(APs_Processado)
-        dis_resultante_ML = calc.distanciaResultanteParcial(MLs_Processado)
+        #dis_resultante_total = calc.distanciaResultante(APs_Processado, MLs_Processado)
+        #dis_resultante_AP = calc.distanciaResultanteParcial(APs_Processado)
+        #dis_resultante_ML = calc.distanciaResultanteParcial(MLs_Processado)
 
-        dis_media = calc.distanciaMedia(dis_resultante_total)
+        #dis_media = calc.distanciaMedia(dis_resultante_total)
 
-        dis_rms_total = calc.distRMS(dis_resultante_total)
-        dis_rms_AP = calc.distRMS(dis_resultante_AP)
-        dis_rms_ML = calc.distRMS(dis_resultante_ML)
+        #dis_rms_total = calc.distRMS(dis_resultante_total)
+        #dis_rms_AP = calc.distRMS(dis_resultante_AP)
+        #dis_rms_ML = calc.distRMS(dis_resultante_ML)
 
-        totex_total = calc.totex(APs_Processado, MLs_Processado)
-        totex_AP = calc.totexParcial(APs_Processado)
-        totex_ML = calc.totexParcial(MLs_Processado)
+        #totex_total = calc.totex(APs_Processado, MLs_Processado)
+        #totex_AP = calc.totexParcial(APs_Processado)
+        #totex_ML = calc.totexParcial(MLs_Processado)
 
-        mvelo_total = calc.mVelo(totex_total, 20)
-        mvelo_AP = calc.mVelo(totex_AP, 20)
-        mvelo_ML =  calc.mVelo(totex_ML, 20)
+        #mvelo_total = calc.mVelo(totex_total, 20)
+        #mvelo_AP = calc.mVelo(totex_AP, 20)
+        #mvelo_ML =  calc.mVelo(totex_ML, 20)
 
-        self.entry_Mdist.set_text(str(dis_media))
+        self.entry_Mdist.set_text(str(round(dis_media, 2)))
 
-        self.entry_Rdist_TOTAL.set_text(str(dis_rms_total))
-        self.entry_Rdist_AP.set_text(str(dis_rms_AP))
-        self.entry_Rdist_ML.set_text(str(dis_rms_ML))
+        self.entry_Rdist_TOTAL.set_text(str(round(dis_rms_total, 2)))
+        self.entry_Rdist_AP.set_text(str(round(dis_rms_AP, 2)))
+        self.entry_Rdist_ML.set_text(str(round(dis_rms_ML, 2)))
 
-        self.entry_TOTEX_TOTAL.set_text(str(totex_total))
-        self.entry_TOTEX_AP.set_text(str(totex_AP))
-        self.entry_TOTEX_ML.set_text(str(totex_ML))
+        self.entry_TOTEX_TOTAL.set_text(str(round(totex_total, 2)))
+        self.entry_TOTEX_AP.set_text(str(round(totex_AP, 2)))
+        self.entry_TOTEX_ML.set_text(str(round(totex_ML, 2)))
 
-        self.entry_MVELO_TOTAL.set_text(str(mvelo_total))
-        self.entry_MVELO_AP.set_text(str(mvelo_AP))
-        self.entry_MVELO_ML.set_text(str(mvelo_ML))
+        self.entry_MVELO_TOTAL.set_text(str(round(mvelo_total, 2)))
+        self.entry_MVELO_AP.set_text(str(round(mvelo_AP, 2)))
+        self.entry_MVELO_ML.set_text(str(round(mvelo_ML, 2)))
 
-        max_absoluto_AP = calc.valorAbsoluto(min(APs_Processado), max(APs_Processado))
-        max_absoluto_ML = calc.valorAbsoluto(min(MLs_Processado), max(MLs_Processado))
+        #self.entry_Mdist.set_text(str(dis_media))
 
-        max_absoluto_AP *=1.25
-        max_absoluto_ML *=1.25
+        #self.entry_Rdist_TOTAL.set_text(str(dis_rms_total))
+        #self.entry_Rdist_AP.set_text(str(dis_rms_AP))
+        #self.entry_Rdist_ML.set_text(str(dis_rms_ML))
 
-        print('max_absoluto_AP:', max_absoluto_AP, 'max_absoluto_ML:', max_absoluto_ML)
+        #self.entry_TOTEX_TOTAL.set_text(str(totex_total))
+        #self.entry_TOTEX_AP.set_text(str(totex_AP))
+        #self.entry_TOTEX_ML.set_text(str(totex_ML))
+
+        #self.entry_MVELO_TOTAL.set_text(str(mvelo_total))
+        #self.entry_MVELO_AP.set_text(str(mvelo_AP))
+        #self.entry_MVELO_ML.set_text(str(mvelo_ML))
+
+        #max_absoluto_AP = calc.valorAbsoluto(min(APs_Processado), max(APs_Processado))
+        #max_absoluto_ML = calc.valorAbsoluto(min(MLs_Processado), max(MLs_Processado))
+
+        #max_absoluto_AP *=1.25
+        #max_absoluto_ML *=1.25
+
+        #print('max_absoluto_AP:', max_absoluto_AP, 'max_absoluto_ML:', max_absoluto_ML)
 
         self.axis2.set_xlim(-max_absoluto_ML, max_absoluto_ML)
         self.axis2.set_ylim(-max_absoluto_AP, max_absoluto_AP)
@@ -830,13 +914,13 @@ class Iem_wbb:
 
             readings = wbb.captura1(self.wiimote)
 
-
             peso += wbb.calcWeight(readings, self.WBB['Calibração'], wbb.escala_eu)
+            #CoP_x, CoP_y =  wbb.calCoP(readings, self.WBB['Calibração'], wbb.escala_eu)
 
-            CoP_x, CoP_y =  wbb.calCoP(readings, self.WBB['Calibração'], wbb.escala_eu)
+            #self.MLs[i] = CoP_x
+            #self.APs[i] = CoP_y
 
-            self.MLs[i] = CoP_x
-            self.APs[i] = CoP_y
+            self.MLs[i], self.APs[i] =  wbb.calcWeight(readings, self.WBB['Calibração'], wbb.escala_eu)
 
             while (ptime.time() < t1):
                 pass
@@ -845,15 +929,18 @@ class Iem_wbb:
         peso = peso / self.amostra
         altura = float(self.pacient['Altura'])/100.
         imc = peso/altura**2
+        print("Peso(Kg) = ", round(peso, 2))
+        print("Altura(m) = ", round(altura, 2))
+        print("IMC = ", round(imc,1))
 
         self.points_entry.set_text(str(self.amostra))
 
         self.pacient['Peso'] = round(peso, 2)
         self.pacient['IMC'] = round(imc ,1)
 
-        self.weight.set_text(str(peso))
+        self.weight.set_text(str(round(peso,2)))
         self.weight.set_max_length(6)
-        self.imc.set_text(str(imc))
+        self.imc.set_text(str(round(imc ,1)))
         self.imc.set_max_length(5)
         self.save_exam_button.set_sensitive(True)
 
@@ -861,14 +948,14 @@ class Iem_wbb:
         self.canvas.draw()
 
         APs_Processado, MLs_Processado, AP_, ML_ = calc.geraAP_ML(self.APs, self.MLs)
-        print("AP_ = ", AP_)
-        print("ML_ = ", ML_)
+        print("AP_ = ", round(AP_, 2))
+        print("ML_ = ", round(ML_, 2))
         #RD
         dis_resultante_total = calc.distanciaResultante(APs_Processado, MLs_Processado)
 
         #? Isto não faz sentido
-        dis_resultante_AP = calc.distanciaResultanteParcial(APs_Processado)
-        dis_resultante_ML = calc.distanciaResultanteParcial(MLs_Processado)
+        #dis_resultante_AP = calc.distanciaResultanteParcial(APs_Processado)
+        #dis_resultante_ML = calc.distanciaResultanteParcial(MLs_Processado)
 
         #MDIST
         dis_media = calc.distanciaMedia(dis_resultante_total)
@@ -878,9 +965,9 @@ class Iem_wbb:
         #MDIST_ML
         dis_mediaML = calc.distanciaMedia_(MLs_Processado)
 
-        print("MDIST = ", dis_media)
-        print("MDIST_AP = ", dis_mediaAP)
-        print("MDIST_ML = ", dis_mediaML)
+        print("MDIST = ", round(dis_media, 2))
+        print("MDIST_AP = ", round(dis_mediaAP, 2))
+        print("MDIST_ML = ", round(dis_mediaML, 2))
 
         #RDIST
         dis_rms_total = calc.distRMS(dis_resultante_total)
@@ -891,9 +978,9 @@ class Iem_wbb:
         #RDIST_AP
         dis_rms_ML = calc.distRMS(MLs_Processado)
 
-        print("RDIST = ", dis_rms_total)
-        print("RDIST_AP = ", dis_rms_AP)
-        print("RDIST_ML = ", dis_rms_ML)
+        print("RDIST = ", round(dis_rms_total, 2))
+        print("RDIST_AP = ", round(dis_rms_AP, 2))
+        print("RDIST_ML = ", round(dis_rms_ML, 2))
 
         #totex_total = calc.totex(APs_Processado, MLs_Processado)
         #TOTEX
@@ -903,9 +990,9 @@ class Iem_wbb:
         #TOTEX_ML
         totex_ML = calc.totexParcial(MLs_Processado)
 
-        print("TOTEX = ", totex_total)
-        print("TOTEX_AP = ", totex_AP)
-        print("TOTEX_ML = ", totex_ML)
+        print("TOTEX = ", round(totex_total, 2))
+        print("TOTEX_AP = ", round(totex_AP, 2))
+        print("TOTEX_ML = ", round(totex_ML, 2))
 
         #MVELO
         mvelo_total = calc.mVelo(totex_total, tTotal)
@@ -914,23 +1001,23 @@ class Iem_wbb:
         #MVELO_ML
         mvelo_ML =  calc.mVelo(totex_ML, tTotal)
 
-        print("MVELO = ", mvelo_total)
-        print("MVELO_AP = ", mvelo_AP)
-        print("MVELO_ML = ", mvelo_ML)
+        print("MVELO = ", round(mvelo_total, 2))
+        print("MVELO_AP = ", round(mvelo_AP, 2))
+        print("MVELO_ML = ", round(mvelo_ML, 2))
 
-        self.entry_Mdist.set_text(str(dis_media))
+        self.entry_Mdist.set_text(str(round(dis_media, 2)))
 
-        self.entry_Rdist_TOTAL.set_text(str(dis_rms_total))
-        self.entry_Rdist_AP.set_text(str(dis_rms_AP))
-        self.entry_Rdist_ML.set_text(str(dis_rms_ML))
+        self.entry_Rdist_TOTAL.set_text(str(round(dis_rms_total, 2)))
+        self.entry_Rdist_AP.set_text(str(round(dis_rms_AP, 2)))
+        self.entry_Rdist_ML.set_text(str(round(dis_rms_ML, 2)))
 
-        self.entry_TOTEX_TOTAL.set_text(str(totex_total))
-        self.entry_TOTEX_AP.set_text(str(totex_AP))
-        self.entry_TOTEX_ML.set_text(str(totex_ML))
+        self.entry_TOTEX_TOTAL.set_text(str(round(totex_total, 2)))
+        self.entry_TOTEX_AP.set_text(str(round(totex_AP, 2)))
+        self.entry_TOTEX_ML.set_text(str(round(totex_ML, 2)))
 
-        self.entry_MVELO_TOTAL.set_text(str(mvelo_total))
-        self.entry_MVELO_AP.set_text(str(mvelo_AP))
-        self.entry_MVELO_ML.set_text(str(mvelo_ML))
+        self.entry_MVELO_TOTAL.set_text(str(round(mvelo_total, 2)))
+        self.entry_MVELO_AP.set_text(str(round(mvelo_AP, 2)))
+        self.entry_MVELO_ML.set_text(str(round(mvelo_ML, 2)))
 
         #max_absoluto_AP = calc.valorAbsoluto(min(APs_Processado), max(APs_Processado))
         #max_absoluto_ML = calc.valorAbsoluto(min(MLs_Processado), max(MLs_Processado))
@@ -941,7 +1028,8 @@ class Iem_wbb:
         max_absoluto_AP *=1.05
         max_absoluto_ML *=1.05
 
-        print('max_absoluto_AP:', max_absoluto_AP, 'max_absoluto_ML:', max_absoluto_ML)
+        print('max_absoluto_AP:', round(max_absoluto_AP, 2))
+        print('max_absoluto_ML:', round(max_absoluto_ML, 2))
 
         self.axis2.set_xlim(-max_absoluto_ML, max_absoluto_ML)
         self.axis2.set_ylim(-max_absoluto_AP, max_absoluto_AP)
